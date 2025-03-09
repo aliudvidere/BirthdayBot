@@ -1,4 +1,4 @@
-package com.schedule.scheduledtaskbot.config;
+package com.birthday.birthdaybot.config;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;

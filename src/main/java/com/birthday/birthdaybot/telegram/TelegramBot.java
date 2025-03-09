@@ -1,13 +1,15 @@
-package com.schedule.scheduledtaskbot.telegram;
+package com.birthday.birthdaybot.telegram;
 
-import com.schedule.scheduledtaskbot.config.BotProperties;
-import com.schedule.scheduledtaskbot.service.CommandService;
+
+import com.birthday.birthdaybot.config.BotProperties;
+import com.birthday.birthdaybot.service.CommandService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
+import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
@@ -15,8 +17,9 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import java.util.Arrays;
 import java.util.List;
 
-import static com.schedule.scheduledtaskbot.constants.CommandConstants.*;
-import static com.schedule.scheduledtaskbot.constants.MessageConstants.*;
+import static com.birthday.birthdaybot.constants.CommandConstants.*;
+import static com.birthday.birthdaybot.constants.MessageConstants.*;
+
 
 
 @Component
@@ -29,9 +32,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     List<BotCommand> commands = Arrays.asList(
             new BotCommand(START_COMMAND, START_COMMAND_DESCRIPTION),
-            new BotCommand(REGISTER_COMMAND, REGISTER_COMMAND_DESCRIPTION),
-            new BotCommand(ACTIVITY_DATES_COMMAND, ACTIVITY_DATES_COMMAND_DESCRIPTION),
-            new BotCommand(TASKS_COMMAND, TASKS_COMMAND_DESCRIPTION)
+            new BotCommand(NEAREST_BIRTHDAYS_COMMAND, NEAREST_BIRTHDAYS_COMMAND_DESCRIPTION)
     );
 
     public TelegramBot(BotProperties botProperties, CommandService commandService) throws TelegramApiException {
@@ -55,14 +56,27 @@ public class TelegramBot extends TelegramLongPollingBot {
             if (command.startsWith(SLASH)) {
                 command = command.substring(1);
                 switch (command) {
-                    case START_COMMAND, HELP_COMMAND ->
-                            sendMessage(new SendMessage(update.getMessage().getChatId().toString(), HELP));
-                    case REGISTER_COMMAND ->
-                        sendMessage(commandService.register(update.getMessage()));
-                    case ACTIVITY_DATES_COMMAND ->
-                        sendMessage(commandService.sendLunaMessage(update.getMessage().getChatId().toString()));
-                    case TASKS_COMMAND ->
-                        sendMessage(commandService.getPeriodicTasks(update.getMessage().getChatId().toString()));
+                    case START_COMMAND, HELP_COMMAND -> {
+                        commandService.register(update.getMessage());
+                        sendMessage(new SendMessage(update.getMessage().getChatId().toString(), HELP));
+                    }
+                    case NEAREST_BIRTHDAYS_COMMAND -> {
+                        sendMessage(commandService.getNearestBirthdays(update.getMessage().getChatId()));
+                    }
+                    case ADMIN_HELP_COMMAND -> {
+                            sendAdminMessage(update.getMessage(), new SendMessage(update.getMessage().getChatId().toString(), ADMIN_HELP));
+                    }
+                    case PERIOD_COMMAND -> {
+                        if (data.isEmpty()) {
+                            sendAdminMessage(update.getMessage(), commandService.getPeriod(update.getMessage().getChatId()));
+                        }
+                        else {
+                            sendAdminMessage(update.getMessage(), commandService.setPeriod(update.getMessage().getChatId(), data));
+                        }
+                    }
+                    case PEOPLE_LIST_COMMAND -> {
+                        sendAdminMessages(update.getMessage(), commandService.getPeopleList(update.getMessage().getChatId()));
+                    }
                 }
             }
             else {
@@ -78,6 +92,20 @@ public class TelegramBot extends TelegramLongPollingBot {
         } catch (TelegramApiException e) {
             log.error(e.getMessage());
         }
+    }
+
+    private void sendMessages(List <SendMessage> sendMessageList) {
+        sendMessageList.forEach(this::sendMessage);
+    }
+
+    private void sendAdminMessage(Message message, SendMessage sendMessage) {
+        if (commandService.checkAdmin(message.getFrom().getUserName())) {
+            sendMessage(sendMessage);
+        }
+    }
+
+    private void sendAdminMessages(Message message, List <SendMessage> sendMessageList) {
+        sendMessageList.forEach(t -> sendAdminMessage(message, t));
     }
 
     private void deleteMessage(DeleteMessage deleteMessage) {

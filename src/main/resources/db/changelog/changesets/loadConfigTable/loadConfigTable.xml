@@ -4,12 +4,12 @@
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
                    https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
 
-    <changeSet id="load_birthday_table" author="Vladimir.Berman">
+    <changeSet id="load_config_table" author="Vladimir.Berman">
 
-        <loadData tableName="birthday" file="./csv/birthdays.csv" relativeToChangelogFile="true"/>
+        <loadData tableName="config" file="csv/config.csv" relativeToChangelogFile="true"/>
 
         <rollback>
-            <delete tableName="birthday"/>
+            <delete tableName="config"/>
         </rollback>
     </changeSet>
 </databaseChangeLog>

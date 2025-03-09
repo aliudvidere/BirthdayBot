@@ -6,8 +6,14 @@
 
     <include file="changesets/createBotUserTable/createBotUserTable.xml" relativeToChangelogFile="true"/>
 
-    <include file="changesets/addLastNotifyColumn/addLastNotifyColumn.xml" relativeToChangelogFile="true"/>
+    <include file="changesets/createBotChatTable/createBotChatTable.xml" relativeToChangelogFile="true"/>
 
-    <include file="changesets/createPeriodicTaskTable/createPeriodicTaskTable.xml" relativeToChangelogFile="true"/>
+    <include file="changesets/createBirthdayTable/createBirthdayTable.xml" relativeToChangelogFile="true"/>
+
+    <include file="changesets/loadBirthdayTable/loadBirthdayTable.xml" relativeToChangelogFile="true"/>
+
+    <include file="changesets/createConfigTable/createConfigTable.xml" relativeToChangelogFile="true"/>
+
+    <include file="changesets/loadConfigTable/loadConfigTable.xml" relativeToChangelogFile="true"/>
 
 </databaseChangeLog>

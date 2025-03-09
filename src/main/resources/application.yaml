@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: BirthdayBot
+  liquibase:
+    change-log: classpath:/db/changelog/db.changelog-master.xml
+    enabled: true
+  profiles:
+    active: dev
+logging:
+  level:
+    root: INFO
+  file:
+    name: /var/log/BirthdayBot/application.log
+  logback:
+    rollingpolicy:
+      max-file-size: 10MB
+      max-history: 30
+      total-size-cap: 1GB
+
+server:
+  port: 1479
+  servlet:
+    context-path: /birthday-bot

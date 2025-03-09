@@ -1,36 +1,40 @@
 package com.birthday.birthdaybot.model.entity;
 
-import com.birthday.birthdaybot.constants.RoleEnum;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 @Entity
-@Table(name = "BOT_USER")
+@Table(name = "BIRTHDAY")
 @Getter
 @Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class BotUserEntity {
+public class BirthdayEntity {
     @Id
     @GeneratedValue(strategy= GenerationType.SEQUENCE,
-            generator="bot_user_id_seq")
-    @SequenceGenerator(name="bot_user_id_seq",
-            sequenceName="bot_user_id_seq", allocationSize=1)
-    @Column(name = "id", nullable = false)
+            generator="birthday_id_seq")
+    @SequenceGenerator(name="birthday_id_seq",
+            sequenceName="birthday_id_seq", allocationSize=1)
+    @Column(name = "id", unique = true, nullable = false)
     private Integer id;
 
-    @Column(name = "tg_code", unique = true, nullable = false)
-    private String tgCode;
+    @Column(name = "full_name", nullable = false)
+    private String fullName;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name="role", nullable = false)
-    private RoleEnum role;
+    @Column(name = "login")
+    private String login;
 
-    public BotUserEntity(String tgCode) {
-        this.tgCode = tgCode;
-        this.role = RoleEnum.USER;
+    @Column(name = "team")
+    private String team;
+
+    @Column(name = "birthday", nullable = false)
+    private LocalDate birthday;
+
+    @Override
+    public String toString() {
+        return fullName + " - " + team + " - " + birthday;
     }
 }

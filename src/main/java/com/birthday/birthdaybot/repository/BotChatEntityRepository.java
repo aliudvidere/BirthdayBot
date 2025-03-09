@@ -1,13 +1,15 @@
 package com.birthday.birthdaybot.repository;
 
-import com.birthday.birthdaybot.model.entity.BotUserEntity;
+import com.birthday.birthdaybot.model.entity.BotChatEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 
+
 @Repository
-public interface BotUserEntityRepository extends JpaRepository<BotUserEntity, Integer> {
-    Optional<BotUserEntity> findByUsername(String username);
+public interface BotChatEntityRepository extends JpaRepository<BotChatEntity, Integer> {
+
+    Optional<BotChatEntity> findByChatId(String chatId);
 
 }

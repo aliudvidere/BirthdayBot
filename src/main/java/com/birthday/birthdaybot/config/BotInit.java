@@ -1,6 +1,6 @@
-package com.schedule.scheduledtaskbot.config;
+package com.birthday.birthdaybot.config;
 
-import com.schedule.scheduledtaskbot.telegram.TelegramBot;
+import com.birthday.birthdaybot.telegram.TelegramBot;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.ContextRefreshedEvent;

@@ -2,6 +2,7 @@ plugins {
     id 'java'
     id 'org.springframework.boot' version '3.4.3'
     id 'io.spring.dependency-management' version '1.1.7'
+    id 'org.liquibase.gradle' version '2.2.0'
 }
 
 group = 'com.birthday'
@@ -33,6 +34,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.liquibase:liquibase-core'
     implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
+    implementation 'org.telegram:telegrambots:6.9.7.1'
     compileOnly 'org.projectlombok:lombok'
     runtimeOnly 'org.postgresql:postgresql'
     annotationProcessor 'org.projectlombok:lombok'
@@ -47,6 +49,26 @@ dependencyManagement {
     }
 }
 
+dependencies {
+    liquibaseRuntime 'org.liquibase:liquibase-core:4.3.5'
+    liquibaseRuntime 'org.liquibase:liquibase-groovy-dsl:2.1.1'
+    liquibaseRuntime 'info.picocli:picocli:4.7.5'
+    liquibaseRuntime 'org.yaml:snakeyaml:1.33'
+    liquibaseRuntime 'org.postgresql:postgresql'
+}
+
+apply plugin: "org.liquibase.gradle"
+
+liquibase {
+    activities {
+        main {
+            changelogFile "src/main/resources/db/changelog/db.changelog-master.xml"
+            url "jdbc:postgresql://192.168.3.26:5438/schedule"
+            username "postgres"
+            password "228"
+        }
+    }
+}
 tasks.named('test') {
     useJUnitPlatform()
 }

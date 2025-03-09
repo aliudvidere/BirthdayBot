@@ -1,26 +1,26 @@
-package com.schedule.scheduledtaskbot.service;
+package com.birthday.birthdaybot.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.schedule.scheduledtaskbot.client.LunaClient;
-import com.schedule.scheduledtaskbot.model.entity.BotUserEntity;
-import com.schedule.scheduledtaskbot.model.entity.PeriodicTaskEntity;
-import com.schedule.scheduledtaskbot.repository.BotUserEntityRepository;
-import com.schedule.scheduledtaskbot.repository.PeriodicTaskEntityRepository;
-import feign.FeignException;
+import com.birthday.birthdaybot.constants.RoleEnum;
+import com.birthday.birthdaybot.model.entity.BirthdayEntity;
+import com.birthday.birthdaybot.model.entity.BotChatEntity;
+import com.birthday.birthdaybot.model.entity.BotUserEntity;
+import com.birthday.birthdaybot.model.entity.ConfigEntity;
+import com.birthday.birthdaybot.repository.BirthdayEntityRepository;
+import com.birthday.birthdaybot.repository.BotChatEntityRepository;
+import com.birthday.birthdaybot.repository.BotUserEntityRepository;
+import com.birthday.birthdaybot.repository.ConfigEntityRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static com.schedule.scheduledtaskbot.constants.MessageConstants.YOU_HAVE_ALREADY_REGISTERED;
-import static com.schedule.scheduledtaskbot.constants.MessageConstants.YOU_HAVE_SUCCESSFULLY_REGISTERED;
+import static com.birthday.birthdaybot.constants.MessageConstants.*;
+
 
 @Slf4j
 @Service
@@ -29,124 +29,74 @@ public class CommandService {
 
     private final BotUserEntityRepository botUserEntityRepository;
 
-    private final LunaClient lunaClient;
+    private final BotChatEntityRepository botChatEntityRepository;
 
-    private final PeriodicTaskEntityRepository periodicTaskEntityRepository;
+    private final BirthdayEntityRepository birthdayEntityRepository;
 
-    @Value("${app.lunaToken}")
-    private String lunaToken;
+    private final ConfigEntityRepository configEntityRepository;
 
-    public SendMessage register(Message registerMessage) {
-        SendMessage message = new SendMessage();
-        message.setChatId(registerMessage.getChatId());
-        Optional<BotUserEntity> botUserEntityOptional = botUserEntityRepository.findByTgCode(registerMessage.getChatId().toString());
-        if (botUserEntityOptional.isPresent()) {
-            String lastName = registerMessage.getFrom().getLastName();
-            String firstName = registerMessage.getFrom().getFirstName();
-            BotUserEntity botUserEntity = botUserEntityOptional.get();
-            botUserEntity.setUsername(lastName != null ? lastName + " " + firstName : firstName);
-            botUserEntityRepository.save(botUserEntity);
-            message.setText(YOU_HAVE_ALREADY_REGISTERED.formatted(botUserEntity.getUsername()));
+    public void register(Message message) {
+        if (!message.getFrom().getUserName().isEmpty()) {
+            Optional<BotUserEntity> botUserEntityOptional = botUserEntityRepository.findByUsername(message.getFrom().getUserName());
+            if (botUserEntityOptional.isEmpty()) {
+                BotUserEntity botUserEntity = new BotUserEntity(message.getFrom().getUserName());
+                botUserEntityRepository.save(botUserEntity);
+            }
         }
-        else {
-            BotUserEntity botUserEntity = new BotUserEntity();
-            String lastName = registerMessage.getFrom().getLastName();
-            String firstName = registerMessage.getFrom().getFirstName();
-            botUserEntity.setUsername(lastName != null ? lastName + " " + firstName : firstName);
-            botUserEntity.setTgCode(registerMessage.getChatId().toString());
-            botUserEntityRepository.save(botUserEntity);
-            message.setText(YOU_HAVE_SUCCESSFULLY_REGISTERED.formatted(botUserEntity.getUsername()));
+        Optional<BotChatEntity> botChatEntityOptional = botChatEntityRepository.findByChatId(message.getChatId().toString());
+        if (botChatEntityOptional.isEmpty()) {
+            BotChatEntity botChatEntity = new BotChatEntity(message.getChatId().toString());
+            botChatEntityRepository.save(botChatEntity);
         }
-        return message;
     }
 
-    public SendMessage sendLunaMessage(String chatId) {
+    public boolean checkAdmin(String username) {
+        if (username.isEmpty()) {
+            return false;
+        }
+        return botUserEntityRepository.findByUsername(username).map(t -> t.getRole().equals(RoleEnum.ADMIN)).orElse(false);
+    }
+
+
+    public SendMessage getNearestBirthdays(Long chatId) {
+        List<BirthdayEntity> birthdayEntityList = birthdayEntityRepository.findUpcomingBirthdays(LocalDate.now().plusDays(Long.parseLong(configEntityRepository.findById("birthday_period").map(ConfigEntity::getValue).orElse("10"))));
+        String messageText = birthdayEntityList.isEmpty() ? NO_NEAREST_BIRTHDAYS : NEAREST_BIRTHDAYS + birthdayEntityList.stream().map(t -> BIRTHDAY_FORMAT.formatted(t.getFullName(), t.getTeam(), t.getBirthday().getDayOfMonth(), t.getBirthday().getMonth().getValue())).collect(Collectors.joining(NEW_LINE));
+        return new SendMessage(chatId.toString(), messageText);
+    }
+
+    public SendMessage getPeriod(Long chatId) {
+        return new SendMessage(chatId.toString(), configEntityRepository.findById("birthday_period").map(ConfigEntity::getValue).orElse("-1"));
+    }
+
+    public SendMessage setPeriod(Long chatId, String data) {
         String messageText;
-        String lunaStaffResponse;
-        String lunaActivityResponse;
         try {
-            lunaStaffResponse = lunaClient.getStaff(lunaToken);
-            lunaActivityResponse = lunaClient.getActivity(lunaToken);
-        }
-        catch (FeignException feignClientException) {
-            log.error(feignClientException.getMessage());
-            return new SendMessage(chatId, feignClientException.getLocalizedMessage());
-        }
-        Map<String, Object> activities;
-        try {
-            activities = new ObjectMapper().readValue(lunaActivityResponse, HashMap.class);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
-        String staffNeededId = getNeededStaffId(lunaStaffResponse);
-        if (staffNeededId != null) {
-            List<Map<String, Object>> data = (List<Map<String, Object>>) activities.get("data");
-            data = data.stream().filter(t -> t.get("staff_id").toString().equals(staffNeededId)).toList();
-            if (data.isEmpty()) {
-                messageText = "No interested activities found";
+            ConfigEntity configEntity = configEntityRepository.findById("birthday_period").orElseThrow();
+            int period = Integer.parseInt(data);
+            if (period <= 0) {
+                throw new Exception(PERIOD_FORMAT_ERROR);
             }
-            else {
-                messageText = data.stream().map(t -> t.get("date") + "--" + t.get("records_count") + "/" + t.get("capacity") + "\n").collect(Collectors.joining("\n"));
-            }
+            configEntity.setValue(data);
+            configEntityRepository.save(configEntity);
+            messageText = PERIOD_WAS_SET.formatted(period);
         }
-        else {
-            messageText = "No interested instructors found";
+        catch (NumberFormatException e) {
+            messageText = PERIOD_FORMAT_ERROR;
         }
-        return new SendMessage(chatId, messageText);
+        catch (Exception e) {
+            messageText = e.getMessage();
+        }
+        return new SendMessage(chatId.toString(), messageText);
     }
 
-    public List<SendMessage> sendLunaMessage() {
-        String messageText;
-        String lunaStaffResponse;
-        String lunaActivityResponse;
-        List<BotUserEntity> botUserEntityList = botUserEntityRepository.findAll();
-        botUserEntityList.forEach(botUserEntity -> {
-            botUserEntity.setLastNotify(LocalDateTime.now());
-            botUserEntityRepository.save(botUserEntity);
-        });
-        try {
-            lunaStaffResponse = lunaClient.getStaff(lunaToken);
-            lunaActivityResponse = lunaClient.getActivity(lunaToken);
+    public List<SendMessage> getPeopleList(Long chatId) {
+        List<BirthdayEntity> birthdayEntityList = birthdayEntityRepository.findAll();
+        List<SendMessage> messageList = new ArrayList<>();
+        int i = 0;
+        while (i < birthdayEntityList.size()) {
+            messageList.add(new SendMessage(chatId.toString(),birthdayEntityList.subList(i, Math.min(i + 10, birthdayEntityList.size())).stream().map(BirthdayEntity::toString).collect(Collectors.joining(NEW_LINE))));
+            i += 10;
         }
-        catch (FeignException feignClientException) {
-            log.error(feignClientException.getMessage());
-            return botUserEntityList.stream().map(t -> new SendMessage(t.getTgCode(), feignClientException.getLocalizedMessage())).toList();
-        }
-        Map<String, Object> activities;
-        try {
-            activities = new ObjectMapper().readValue(lunaActivityResponse, HashMap.class);
-        }
-        catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
-        String staffNeededId = getNeededStaffId(lunaStaffResponse);
-        if (staffNeededId != null) {
-            List<Map<String, Object>> data = (List<Map<String, Object>>) activities.get("data");
-            data = data.stream().filter(t -> t.get("staff_id").toString().equals(staffNeededId) && Integer.parseInt(t.get("capacity").toString()) - Integer.parseInt(t.get("records_count").toString()) > 0).toList();
-            if (data.isEmpty()) {
-                return new ArrayList<>();
-            }
-            else {
-                messageText = data.stream().map(t -> t.get("date") + ":" + t.get("capacity") + ":" + t.get("records_count") + "\n").collect(Collectors.joining("\n"));
-            }
-        }
-        else {
-            return new ArrayList<>();
-        }
-        return botUserEntityList.stream().map(t -> new SendMessage(t.getTgCode(), messageText)).toList();
-    }
-
-    public SendMessage getPeriodicTasks(String chatId) {
-        return new SendMessage(chatId, periodicTaskEntityRepository.findAll().stream().map(PeriodicTaskEntity::toString).collect(Collectors.joining("\n")));
-    }
-
-    private String getNeededStaffId(String lunaStaffResponse) {
-        List<Object> staff;
-        try {
-            staff = new ObjectMapper().readValue(lunaStaffResponse, ArrayList.class);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
-        return staff.stream().filter(t -> ((Map<String, Object>)t).get("name").toString().equals("Ольга Кремень")).findFirst().map(t -> ((Map<String, Object>)t).get("id").toString()).orElse(null);
+        return messageList;
     }
 }

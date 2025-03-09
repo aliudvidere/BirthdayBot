@@ -1,18 +1,15 @@
-package com.schedule.scheduledtaskbot.constants;
+package com.birthday.birthdaybot.constants;
 
 public interface CommandConstants {
 
     String START_COMMAND = "start";
     String START_COMMAND_DESCRIPTION = "Starts the bot";
 
-    String REGISTER_COMMAND = "register";
-    String REGISTER_COMMAND_DESCRIPTION = "Registration";
-
-    String ACTIVITY_DATES_COMMAND = "activity_dates";
-    String ACTIVITY_DATES_COMMAND_DESCRIPTION = "Get free activity details";
-
-    String TASKS_COMMAND = "tasks";
-    String TASKS_COMMAND_DESCRIPTION = "Get all tasks";
+    String NEAREST_BIRTHDAYS_COMMAND = "nearest_birthdays";
+    String NEAREST_BIRTHDAYS_COMMAND_DESCRIPTION = "Get nearest birthdays";
 
     String HELP_COMMAND = "help";
+    String ADMIN_HELP_COMMAND = "admin_help";
+    String PERIOD_COMMAND = "period";
+    String PEOPLE_LIST_COMMAND = "people_list";
 }

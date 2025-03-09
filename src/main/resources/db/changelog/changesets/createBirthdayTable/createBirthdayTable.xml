@@ -4,24 +4,24 @@
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
                    https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
 
-    <changeSet id="create_bot_user_table" author="Vladimir.Berman">
-        <createSequence cycle="false" incrementBy="1" sequenceName="bot_user_id_seq"/>
+    <changeSet id="create_birthday_table" author="Vladimir.Berman">
+        <createSequence cycle="false" incrementBy="1" sequenceName="birthday_id_seq"/>
 
-        <createTable tableName="bot_user">
-            <column name="id" type="int" defaultValueSequenceNext="bot_user_id_seq">
+        <createTable tableName="birthday">
+            <column name="id" type="int" defaultValueSequenceNext="birthday_id_seq">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
-            <column name="tg_code" type="varchar">
-                <constraints unique="true" nullable="false"/>
-            </column>
-            <column name="role" type="varchar(10)" defaultValue="USER">
+            <column name="full_name" type="varchar(100)">
                 <constraints nullable="false"/>
             </column>
+            <column name="login" type="varchar(100)"/>
+            <column name="team" type="varchar(100)"/>
+            <column name="birthday" type="date"/>
         </createTable>
 
         <rollback>
-            <dropTable tableName="bot_user"/>
-            <dropSequence sequenceName="bot_user_id_seq"/>
+            <dropTable tableName="birthday"/>
+            <dropSequence sequenceName="birthday_id_seq"/>
         </rollback>
     </changeSet>
 </databaseChangeLog>
