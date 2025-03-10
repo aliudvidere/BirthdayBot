@@ -60,7 +60,7 @@ public class CommandService {
 
     public SendMessage getNearestBirthdays(Long chatId) {
         List<BirthdayEntity> birthdayEntityList = birthdayEntityRepository.findUpcomingBirthdays(LocalDate.now().plusDays(Long.parseLong(configEntityRepository.findById("birthday_period").map(ConfigEntity::getValue).orElse("10"))));
-        String messageText = birthdayEntityList.isEmpty() ? NO_NEAREST_BIRTHDAYS : NEAREST_BIRTHDAYS + birthdayEntityList.stream().map(t -> BIRTHDAY_FORMAT.formatted(t.getFullName(), t.getTeam(), t.getBirthday().getDayOfMonth(), t.getBirthday().getMonth().getValue())).collect(Collectors.joining(NEW_LINE));
+        String messageText = birthdayEntityList.isEmpty() ? NO_NEAREST_BIRTHDAYS : NEAREST_BIRTHDAYS.formatted(birthdayEntityList.stream().map(t -> BIRTHDAY_FORMAT.formatted(t.getFullName(), t.getTeam(), t.getBirthday().getDayOfMonth(), t.getBirthday().getMonth().getValue())).collect(Collectors.joining(NEW_LINE)));
         return new SendMessage(chatId.toString(), messageText);
     }
 
@@ -91,6 +91,45 @@ public class CommandService {
 
     public List<SendMessage> getPeopleList(Long chatId) {
         List<BirthdayEntity> birthdayEntityList = birthdayEntityRepository.findAll();
+        return getPeopleList(chatId, birthdayEntityList);
+    }
+
+    public List<SendMessage> getTodayBirthdays() {
+        List<BirthdayEntity> birthdayEntityList = birthdayEntityRepository.findUpcomingBirthdays(LocalDate.now());
+        if (birthdayEntityList.isEmpty()) {
+            return Collections.emptyList();
+        }
+        String messageText = TODAY_BIRTHDAYS.formatted(birthdayEntityList.stream().map(t -> BIRTHDAY_FORMAT.formatted(t.getFullName(), t.getTeam(), t.getBirthday().getDayOfMonth(), t.getBirthday().getMonth().getValue())).collect(Collectors.joining(NEW_LINE)));
+        return botChatEntityRepository.findByNeedNotifyTrue().stream().map(t -> new SendMessage(t.getChatId(), messageText)).toList();
+    }
+
+    public List<SendMessage> getThisWeekBirthdays() {
+        List<BirthdayEntity> birthdayEntityList = birthdayEntityRepository.findUpcomingBirthdays(LocalDate.now().plusDays(6));
+        if (birthdayEntityList.isEmpty()) {
+            return Collections.emptyList();
+        }
+        String messageText = NEAREST_BIRTHDAYS.formatted(birthdayEntityList.stream().map(t -> BIRTHDAY_FORMAT.formatted(t.getFullName(), t.getTeam(), t.getBirthday().getDayOfMonth(), t.getBirthday().getMonth().getValue())).collect(Collectors.joining(NEW_LINE)));
+        return botChatEntityRepository.findByNeedNotifyTrue().stream().map(t -> new SendMessage(t.getChatId(), messageText)).toList();
+    }
+
+    public SendMessage getTodayBirthdays(Long chatId) {
+        List<BirthdayEntity> birthdayEntityList = birthdayEntityRepository.findUpcomingBirthdays(LocalDate.now());
+        String messageText = birthdayEntityList.isEmpty() ? NO_NEAREST_BIRTHDAYS: TODAY_BIRTHDAYS.formatted(birthdayEntityList.stream().map(t -> BIRTHDAY_FORMAT.formatted(t.getFullName(), t.getTeam(), t.getBirthday().getDayOfMonth(), t.getBirthday().getMonth().getValue())).collect(Collectors.joining(NEW_LINE)));
+        return new SendMessage(chatId.toString(), messageText);
+    }
+
+    public SendMessage getThisWeekBirthdays(Long chatId) {
+        List<BirthdayEntity> birthdayEntityList = birthdayEntityRepository.findUpcomingBirthdays(LocalDate.now().plusDays(6));
+        String messageText = birthdayEntityList.isEmpty() ? NO_NEAREST_BIRTHDAYS: NEAREST_BIRTHDAYS.formatted(birthdayEntityList.stream().map(t -> BIRTHDAY_FORMAT.formatted(t.getFullName(), t.getTeam(), t.getBirthday().getDayOfMonth(), t.getBirthday().getMonth().getValue())).collect(Collectors.joining(NEW_LINE)));
+        return new SendMessage(chatId.toString(), messageText);
+    }
+
+    public List<SendMessage> getPeopleList(Long chatId, String data) {
+        List<BirthdayEntity> birthdayEntityList = birthdayEntityRepository.findAllByFullNameIgnoreCaseLikeOrTeamIgnoreCase(FIND_TEMPLATE.formatted(data), FIND_TEMPLATE.formatted(data));
+        return getPeopleList(chatId, birthdayEntityList);
+    }
+
+    private List<SendMessage> getPeopleList(Long chatId, List<BirthdayEntity> birthdayEntityList) {
         List<SendMessage> messageList = new ArrayList<>();
         int i = 0;
         while (i < birthdayEntityList.size()) {

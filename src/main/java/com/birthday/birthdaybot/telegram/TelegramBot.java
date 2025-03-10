@@ -32,7 +32,9 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     List<BotCommand> commands = Arrays.asList(
             new BotCommand(START_COMMAND, START_COMMAND_DESCRIPTION),
-            new BotCommand(NEAREST_BIRTHDAYS_COMMAND, NEAREST_BIRTHDAYS_COMMAND_DESCRIPTION)
+            new BotCommand(NEAREST_BIRTHDAYS_COMMAND, NEAREST_BIRTHDAYS_COMMAND_DESCRIPTION),
+            new BotCommand(THIS_WEEK_BIRTHDAYS_COMMAND, THIS_WEEK_BIRTHDAYS_COMMAND_DESCRIPTION),
+            new BotCommand(TODAY_BIRTHDAYS_COMMAND, TODAY_BIRTHDAYS_COMMAND_DESCRIPTION)
     );
 
     public TelegramBot(BotProperties botProperties, CommandService commandService) throws TelegramApiException {
@@ -63,6 +65,12 @@ public class TelegramBot extends TelegramLongPollingBot {
                     case NEAREST_BIRTHDAYS_COMMAND -> {
                         sendMessage(commandService.getNearestBirthdays(update.getMessage().getChatId()));
                     }
+                    case THIS_WEEK_BIRTHDAYS_COMMAND -> {
+                        sendMessage(commandService.getThisWeekBirthdays(update.getMessage().getChatId()));
+                    }
+                    case TODAY_BIRTHDAYS_COMMAND -> {
+                        sendMessage(commandService.getTodayBirthdays(update.getMessage().getChatId()));
+                    }
                     case ADMIN_HELP_COMMAND -> {
                             sendAdminMessage(update.getMessage(), new SendMessage(update.getMessage().getChatId().toString(), ADMIN_HELP));
                     }
@@ -76,6 +84,9 @@ public class TelegramBot extends TelegramLongPollingBot {
                     }
                     case PEOPLE_LIST_COMMAND -> {
                         sendAdminMessages(update.getMessage(), commandService.getPeopleList(update.getMessage().getChatId()));
+                    }
+                    case FIND_COMMAND -> {
+                        sendAdminMessages(update.getMessage(), commandService.getPeopleList(update.getMessage().getChatId(), data));
                     }
                 }
             }
@@ -94,7 +105,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
     }
 
-    private void sendMessages(List <SendMessage> sendMessageList) {
+    public void sendMessages(List <SendMessage> sendMessageList) {
         sendMessageList.forEach(this::sendMessage);
     }
 

@@ -18,7 +18,9 @@ public interface MessageConstants {
 
     String SEMICOLON = ";";
 
-    String NEAREST_BIRTHDAYS = " \uD83D\uDCC5 Ближайшие дни рождения:\n";
+    String NEAREST_BIRTHDAYS = " \uD83D\uDCC5 Ближайшие дни рождения:\n%s";
+
+    String TODAY_BIRTHDAYS = "Сегодня день рождения отмечают %s,\n поздравляем!";
 
     String NO_NEAREST_BIRTHDAYS = "В заданный период нет дней рождений";
 
@@ -29,5 +31,7 @@ public interface MessageConstants {
     String PERIOD_FORMAT_ERROR = "Period value should be number more than 0";
 
     String PERIOD_WAS_SET = "Period was set to %d days";
+
+    String FIND_TEMPLATE = "%%%s%%";
 }
 

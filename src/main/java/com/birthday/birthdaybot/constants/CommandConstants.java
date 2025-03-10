@@ -8,8 +8,15 @@ public interface CommandConstants {
     String NEAREST_BIRTHDAYS_COMMAND = "nearest_birthdays";
     String NEAREST_BIRTHDAYS_COMMAND_DESCRIPTION = "Get nearest birthdays";
 
+    String THIS_WEEK_BIRTHDAYS_COMMAND = "this_week_birthdays";
+    String THIS_WEEK_BIRTHDAYS_COMMAND_DESCRIPTION = "Get this week birthdays";
+
+    String TODAY_BIRTHDAYS_COMMAND = "today_birthdays";
+    String TODAY_BIRTHDAYS_COMMAND_DESCRIPTION = "Get today birthdays";
+
     String HELP_COMMAND = "help";
     String ADMIN_HELP_COMMAND = "admin_help";
     String PERIOD_COMMAND = "period";
     String PEOPLE_LIST_COMMAND = "people_list";
+    String FIND_COMMAND= "find";
 }
