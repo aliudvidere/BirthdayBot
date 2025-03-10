@@ -19,4 +19,6 @@ public interface CommandConstants {
     String PERIOD_COMMAND = "period";
     String PEOPLE_LIST_COMMAND = "people_list";
     String FIND_COMMAND= "find";
+    String STOP_NOTIFY_COMMAND = "stop_notify";
+    String START_NOTIFY_COMMAND = "start_notify";
 }

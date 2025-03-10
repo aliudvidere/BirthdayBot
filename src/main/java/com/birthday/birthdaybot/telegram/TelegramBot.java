@@ -58,8 +58,11 @@ public class TelegramBot extends TelegramLongPollingBot {
             if (command.startsWith(SLASH)) {
                 command = command.substring(1);
                 switch (command) {
-                    case START_COMMAND, HELP_COMMAND -> {
+                    case START_COMMAND -> {
                         commandService.register(update.getMessage());
+                        sendMessage(new SendMessage(update.getMessage().getChatId().toString(), HELP));
+                    }
+                    case HELP_COMMAND -> {
                         sendMessage(new SendMessage(update.getMessage().getChatId().toString(), HELP));
                     }
                     case NEAREST_BIRTHDAYS_COMMAND -> {
@@ -87,6 +90,12 @@ public class TelegramBot extends TelegramLongPollingBot {
                     }
                     case FIND_COMMAND -> {
                         sendAdminMessages(update.getMessage(), commandService.getPeopleList(update.getMessage().getChatId(), data));
+                    }
+                    case STOP_NOTIFY_COMMAND -> {
+                        sendAdminMessage(update.getMessage(), commandService.stopNotify(update.getMessage().getChatId()));
+                    }
+                    case START_NOTIFY_COMMAND -> {
+                        sendAdminMessage(update.getMessage(), commandService.startNotify(update.getMessage().getChatId()));
                     }
                 }
             }

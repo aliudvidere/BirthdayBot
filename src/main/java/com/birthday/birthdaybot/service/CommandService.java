@@ -44,10 +44,47 @@ public class CommandService {
             }
         }
         Optional<BotChatEntity> botChatEntityOptional = botChatEntityRepository.findByChatId(message.getChatId().toString());
+        BotChatEntity botChatEntity;
         if (botChatEntityOptional.isEmpty()) {
-            BotChatEntity botChatEntity = new BotChatEntity(message.getChatId().toString());
-            botChatEntityRepository.save(botChatEntity);
+            botChatEntity = new BotChatEntity(message.getChatId().toString());
         }
+        else {
+            botChatEntity = botChatEntityOptional.get();
+            botChatEntity.setNeedNotify(true);
+        }
+        botChatEntityRepository.save(botChatEntity);
+    }
+
+    public SendMessage stopNotify(Long chatId) {
+        Optional<BotChatEntity> botChatEntityOptional = botChatEntityRepository.findByChatId(chatId.toString());
+        BotChatEntity botChatEntity;
+        if (botChatEntityOptional.isEmpty()) {
+            botChatEntity = BotChatEntity
+                    .builder()
+                    .chatId(chatId.toString())
+                    .needNotify(false)
+                    .build();
+        }
+        else {
+            botChatEntity = botChatEntityOptional.get();
+            botChatEntity.setNeedNotify(false);
+        }
+        botChatEntityRepository.save(botChatEntity);
+        return new SendMessage(chatId.toString(), STOP_NOTIFY);
+    }
+
+    public SendMessage startNotify(Long chatId) {
+        Optional<BotChatEntity> botChatEntityOptional = botChatEntityRepository.findByChatId(chatId.toString());
+        BotChatEntity botChatEntity;
+        if (botChatEntityOptional.isEmpty()) {
+            botChatEntity = new BotChatEntity(chatId.toString());
+        }
+        else {
+            botChatEntity = botChatEntityOptional.get();
+            botChatEntity.setNeedNotify(true);
+        }
+        botChatEntityRepository.save(botChatEntity);
+        return new SendMessage(chatId.toString(), START_NOTIFY);
     }
 
     public boolean checkAdmin(String username) {
@@ -125,7 +162,7 @@ public class CommandService {
     }
 
     public List<SendMessage> getPeopleList(Long chatId, String data) {
-        List<BirthdayEntity> birthdayEntityList = birthdayEntityRepository.findAllByFullNameIgnoreCaseLikeOrTeamIgnoreCase(FIND_TEMPLATE.formatted(data), FIND_TEMPLATE.formatted(data));
+        List<BirthdayEntity> birthdayEntityList = birthdayEntityRepository.findAllByFullNameIgnoreCaseLikeOrTeamIgnoreCaseLike(FIND_TEMPLATE.formatted(data), FIND_TEMPLATE.formatted(data));
         return getPeopleList(chatId, birthdayEntityList);
     }
 

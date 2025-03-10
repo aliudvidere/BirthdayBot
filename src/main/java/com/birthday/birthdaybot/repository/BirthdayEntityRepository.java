@@ -72,5 +72,5 @@ public interface BirthdayEntityRepository extends JpaRepository<BirthdayEntity, 
         """, nativeQuery = true)
     List<BirthdayEntity> findUpcomingBirthdays(@Param("date") LocalDate date);
 
-    List<BirthdayEntity> findAllByFullNameIgnoreCaseLikeOrTeamIgnoreCase(String fullName, String team);
+    List<BirthdayEntity> findAllByFullNameIgnoreCaseLikeOrTeamIgnoreCaseLike(String fullName, String team);
 }

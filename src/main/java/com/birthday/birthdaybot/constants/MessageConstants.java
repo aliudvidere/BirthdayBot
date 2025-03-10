@@ -33,5 +33,9 @@ public interface MessageConstants {
     String PERIOD_WAS_SET = "Period was set to %d days";
 
     String FIND_TEMPLATE = "%%%s%%";
+
+    String STOP_NOTIFY = "Notification about birthdays were stopped in this chat";
+
+    String START_NOTIFY = "Notification about birthdays were started in this chat";
 }
 
