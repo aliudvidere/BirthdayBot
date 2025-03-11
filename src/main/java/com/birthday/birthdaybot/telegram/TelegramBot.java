@@ -10,7 +10,6 @@ import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
-import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
@@ -76,32 +75,50 @@ public class TelegramBot extends TelegramLongPollingBot {
                         sendMessage(commandService.getTodayBirthdays(update.getMessage().getChatId()));
                     }
                     case ADMIN_HELP_COMMAND -> {
-                        SendMessage sendMessage = new SendMessage(update.getMessage().getChatId().toString(), ADMIN_HELP);
-                        sendMessage.setParseMode(HTML);
-                        sendAdminMessage(update.getMessage().getFrom().getUserName(), sendMessage);
+                        if (commandService.checkAdmin(update.getMessage().getFrom().getUserName())) {
+                            SendMessage sendMessage = new SendMessage(update.getMessage().getChatId().toString(), ADMIN_HELP);
+                            sendMessage.setParseMode(HTML);
+                            sendMessage(sendMessage);
+                        }
                     }
                     case PERIOD_COMMAND -> {
-                        if (data.isEmpty()) {
-                            sendAdminMessage(update.getMessage().getFrom().getUserName(), commandService.getPeriod(update.getMessage().getChatId()));
-                        }
-                        else {
-                            sendAdminMessage(update.getMessage().getFrom().getUserName(), commandService.setPeriod(update.getMessage().getChatId(), data));
+                        if (commandService.checkAdmin(update.getMessage().getFrom().getUserName())) {
+                            if (data.isEmpty()) {
+                                sendMessage(commandService.getPeriod(update.getMessage().getChatId()));
+                            } else {
+                                sendMessage(commandService.setPeriod(update.getMessage().getChatId(), data));
+                            }
                         }
                     }
                     case PEOPLE_LIST_COMMAND -> {
-                        sendAdminMessages(update.getMessage(), commandService.getPeopleList(update.getMessage().getChatId()));
+                        if (commandService.checkAdmin(update.getMessage().getFrom().getUserName())) {
+                            sendMessages(commandService.getPeopleList(update.getMessage().getChatId()));
+                        }
                     }
                     case FIND_COMMAND -> {
-                        sendAdminMessages(update.getMessage(), commandService.getPeopleList(update.getMessage().getChatId(), data));
+                        if (commandService.checkAdmin(update.getMessage().getFrom().getUserName())) {
+                            sendMessages(commandService.getPeopleList(update.getMessage().getChatId(), data));
+                        }
                     }
                     case STOP_NOTIFY_COMMAND -> {
-                        sendAdminMessage(update.getMessage().getFrom().getUserName(), commandService.stopNotify(update.getMessage().getChatId()));
+                        if (commandService.checkAdmin(update.getMessage().getFrom().getUserName())) {
+                            sendMessage(commandService.stopNotify(update.getMessage().getChatId()));
+                        }
                     }
                     case START_NOTIFY_COMMAND -> {
-                        sendAdminMessage(update.getMessage().getFrom().getUserName(), commandService.startNotify(update.getMessage().getChatId()));
+                        if (commandService.checkAdmin(update.getMessage().getFrom().getUserName())) {
+                            sendMessage(commandService.startNotify(update.getMessage().getChatId()));
+                        }
                     }
                     case DELETE_COMMAND -> {
-                        sendAdminMessage(update.getMessage().getFrom().getUserName(), commandService.deletePerson(update.getMessage().getChatId(), data));
+                        if (commandService.checkAdmin(update.getMessage().getFrom().getUserName())) {
+                            sendMessage(commandService.deletePerson(update.getMessage().getChatId(), data));
+                        }
+                    }
+                    case ADD_COMMAND -> {
+                        if (commandService.checkAdmin(update.getMessage().getFrom().getUserName())) {
+                            sendMessage(commandService.addPerson(update.getMessage().getChatId(), data));
+                        }
                     }
                 }
             }
@@ -113,7 +130,9 @@ public class TelegramBot extends TelegramLongPollingBot {
             deleteMessage(deleteMessage);
             switch (CallbackTypeEnum.values()[Integer.parseInt(update.getCallbackQuery().getData().split(SEMICOLON)[0])]) {
                 case CallbackTypeEnum.DELETE -> {
-                    sendAdminMessage(update.getCallbackQuery().getFrom().getUserName(), commandService.deletePersonCallback(update.getCallbackQuery().getMessage().getChatId(), update.getCallbackQuery().getData()));
+                    if (commandService.checkAdmin(update.getCallbackQuery().getFrom().getUserName())) {
+                        sendMessage(commandService.deletePersonCallback(update.getCallbackQuery().getMessage().getChatId(), update.getCallbackQuery().getData()));
+                    }
                 }
             }
         }
@@ -130,16 +149,6 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     public void sendMessages(List <SendMessage> sendMessageList) {
         sendMessageList.forEach(this::sendMessage);
-    }
-
-    private void sendAdminMessage(String username, SendMessage sendMessage) {
-        if (commandService.checkAdmin(username)) {
-            sendMessage(sendMessage);
-        }
-    }
-
-    private void sendAdminMessages(Message message, List <SendMessage> sendMessageList) {
-        sendMessageList.forEach(t -> sendAdminMessage(message.getFrom().getUserName(), t));
     }
 
     private void deleteMessage(DeleteMessage deleteMessage) {

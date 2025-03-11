@@ -15,6 +15,7 @@ public interface MessageConstants {
             /stop_notify - stop birthday notification in this chat;
             /start_notify - start birthday notification in this chat;
             /delete - to delete person send /delete name or team, for example <b>/delete test</b> return buttons with all people with test in name or team (limit - 10 buttons)
+            /add to add person send /add name, login, team, birthday in format YYYY-MM-DD format, for example <b>/add test, login, team, 1999-01-01</b>
             """;
     String COMMAND_FORMAT = "Command should start with \"/\"";
 
@@ -25,6 +26,8 @@ public interface MessageConstants {
     String SLASH = "/";
 
     String SEMICOLON = ";";
+
+    String COMMA = ",";
 
     String NEAREST_BIRTHDAYS = " \uD83D\uDCC5 Ближайшие дни рождения:\n%s";
 
@@ -55,5 +58,7 @@ public interface MessageConstants {
     String PERSON_WAS_DELETED = "%s was deleted";
 
     String PERSON_WAS_NOT_DELETED = "Person was not deleted due to some error";
+
+    String PERSON_WAS_CREATED = "%s was created";
 }
 

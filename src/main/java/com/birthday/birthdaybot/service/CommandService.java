@@ -200,6 +200,26 @@ public class CommandService {
 
     }
 
+    public SendMessage addPerson(Long chatId, String data) {
+        SendMessage sendMessage = new SendMessage();
+        sendMessage.setChatId(chatId);
+        String[] fields = data.split(COMMA);
+        try {
+            BirthdayEntity birthdayEntity = BirthdayEntity
+                    .builder()
+                    .fullName(fields[0].trim())
+                    .login(fields[1].trim())
+                    .team(fields[2].trim())
+                    .birthday(LocalDate.parse(fields[3].trim()))
+                    .build();
+            birthdayEntityRepository.save(birthdayEntity);
+            sendMessage.setText(PERSON_WAS_CREATED.formatted(birthdayEntity.toString()));
+        } catch (Exception e) {
+            sendMessage.setText(e.getMessage());
+        }
+        return sendMessage;
+    }
+
     private List<SendMessage> getPeopleList(Long chatId, List<BirthdayEntity> birthdayEntityList) {
         List<SendMessage> messageList = new ArrayList<>();
         int i = 0;
