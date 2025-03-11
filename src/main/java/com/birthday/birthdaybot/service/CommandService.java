@@ -10,6 +10,7 @@ import com.birthday.birthdaybot.repository.BirthdayEntityRepository;
 import com.birthday.birthdaybot.repository.BotChatEntityRepository;
 import com.birthday.birthdaybot.repository.BotUserEntityRepository;
 import com.birthday.birthdaybot.repository.ConfigEntityRepository;
+import com.birthday.birthdaybot.utils.DateTransformer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -18,6 +19,9 @@ import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -37,6 +41,8 @@ public class CommandService {
     private final BirthdayEntityRepository birthdayEntityRepository;
 
     private final ConfigEntityRepository configEntityRepository;
+
+    private final DateTransformer dateTransformer;
 
     public void register(Message message) {
         if (!message.getFrom().getUserName().isEmpty()) {
@@ -99,7 +105,7 @@ public class CommandService {
 
 
     public SendMessage getNearestBirthdays(Long chatId) {
-        List<BirthdayEntity> birthdayEntityList = birthdayEntityRepository.findUpcomingBirthdays(LocalDate.now().plusDays(Long.parseLong(configEntityRepository.findById("birthday_period").map(ConfigEntity::getValue).orElse("10"))));
+        List<BirthdayEntity> birthdayEntityList = birthdayEntityRepository.findUpcomingBirthdays(LocalDate.now(), LocalDate.now().plusDays(Long.parseLong(configEntityRepository.findById("birthday_period").map(ConfigEntity::getValue).orElse("10"))));
         String messageText = birthdayEntityList.isEmpty() ? NO_NEAREST_BIRTHDAYS : NEAREST_BIRTHDAYS.formatted(birthdayEntityList.stream().map(t -> BIRTHDAY_FORMAT.formatted(t.getFullName(), t.getTeam(), t.getBirthday().getDayOfMonth(), t.getBirthday().getMonth().getValue())).collect(Collectors.joining(NEW_LINE)));
         return new SendMessage(chatId.toString(), messageText);
     }
@@ -135,16 +141,16 @@ public class CommandService {
     }
 
     public List<SendMessage> getTodayBirthdays() {
-        List<BirthdayEntity> birthdayEntityList = birthdayEntityRepository.findUpcomingBirthdays(LocalDate.now());
-        if (birthdayEntityList.isEmpty()) {
-            return Collections.emptyList();
-        }
-        String messageText = TODAY_BIRTHDAYS.formatted(birthdayEntityList.stream().map(t -> BIRTHDAY_FORMAT.formatted(t.getFullName(), t.getTeam(), t.getBirthday().getDayOfMonth(), t.getBirthday().getMonth().getValue())).collect(Collectors.joining(NEW_LINE)));
-        return botChatEntityRepository.findByNeedNotifyTrue().stream().map(t -> new SendMessage(t.getChatId(), messageText)).toList();
+        String messageText = getTodayMessage();
+        return botChatEntityRepository.findByNeedNotifyTrue().stream().map(t -> {
+            SendMessage sendMessage = new SendMessage(t.getChatId(), messageText);
+            sendMessage.setParseMode(HTML);
+            return sendMessage;
+        }).toList();
     }
 
     public List<SendMessage> getThisWeekBirthdays() {
-        List<BirthdayEntity> birthdayEntityList = birthdayEntityRepository.findUpcomingBirthdays(LocalDate.now().plusDays(6));
+        List<BirthdayEntity> birthdayEntityList = birthdayEntityRepository.findUpcomingBirthdays(LocalDate.now(), LocalDate.now().plusDays(7));
         if (birthdayEntityList.isEmpty()) {
             return Collections.emptyList();
         }
@@ -153,13 +159,13 @@ public class CommandService {
     }
 
     public SendMessage getTodayBirthdays(Long chatId) {
-        List<BirthdayEntity> birthdayEntityList = birthdayEntityRepository.findUpcomingBirthdays(LocalDate.now());
-        String messageText = birthdayEntityList.isEmpty() ? NO_NEAREST_BIRTHDAYS: TODAY_BIRTHDAYS.formatted(birthdayEntityList.stream().map(t -> BIRTHDAY_FORMAT.formatted(t.getFullName(), t.getTeam(), t.getBirthday().getDayOfMonth(), t.getBirthday().getMonth().getValue())).collect(Collectors.joining(NEW_LINE)));
-        return new SendMessage(chatId.toString(), messageText);
+        SendMessage sendMessage = new SendMessage(chatId.toString(), getTodayMessage());
+        sendMessage.setParseMode(HTML);
+        return sendMessage;
     }
 
     public SendMessage getThisWeekBirthdays(Long chatId) {
-        List<BirthdayEntity> birthdayEntityList = birthdayEntityRepository.findUpcomingBirthdays(LocalDate.now().plusDays(6));
+        List<BirthdayEntity> birthdayEntityList = birthdayEntityRepository.findUpcomingBirthdays(LocalDate.now(), LocalDate.now().plusDays(7));
         String messageText = birthdayEntityList.isEmpty() ? NO_NEAREST_BIRTHDAYS: NEAREST_BIRTHDAYS.formatted(birthdayEntityList.stream().map(t -> BIRTHDAY_FORMAT.formatted(t.getFullName(), t.getTeam(), t.getBirthday().getDayOfMonth(), t.getBirthday().getMonth().getValue())).collect(Collectors.joining(NEW_LINE)));
         return new SendMessage(chatId.toString(), messageText);
     }
@@ -220,6 +226,32 @@ public class CommandService {
         return sendMessage;
     }
 
+    public SendMessage addPersonsFromCSV(Long chatId, File file) {
+        List<List<String>> records = List.of();
+        SendMessage sendMessage = new SendMessage();
+        sendMessage.setChatId(chatId);
+        String messageText;
+        try {
+            records = Files.readAllLines(file.toPath())
+                    .stream()
+                    .map(line -> Arrays.asList(line.split(COMMA)))
+                    .toList();
+            List<BirthdayEntity> birthdayEntityList = records.stream().map(t -> BirthdayEntity
+                    .builder()
+                    .fullName(t.get(0).trim())
+                    .login(t.get(1).trim())
+                    .team(t.get(2).trim())
+                    .birthday(LocalDate.parse(t.get(3).trim()))
+                    .build())
+                    .toList();
+            birthdayEntityRepository.saveAll(birthdayEntityList);
+            messageText = ADDED_NEW_PERSONS.formatted(birthdayEntityList.size());
+        } catch (Exception e) {
+            messageText = e.getMessage();
+        }
+        return new SendMessage(chatId.toString(), messageText);
+    }
+
     private List<SendMessage> getPeopleList(Long chatId, List<BirthdayEntity> birthdayEntityList) {
         List<SendMessage> messageList = new ArrayList<>();
         int i = 0;
@@ -243,5 +275,13 @@ public class CommandService {
         keyboardButtons.forEach(t -> rowList.add(List.of(t)));
         inlineKeyboardMarkup.setKeyboard(rowList);
         sendMessage.setReplyMarkup(inlineKeyboardMarkup);
+    }
+
+    private String getTodayMessage() {
+        List<BirthdayEntity> birthdayEntityList = birthdayEntityRepository.findUpcomingBirthdays(LocalDate.now(), LocalDate.now().plusDays(1));
+        String messageText = birthdayEntityList.isEmpty() ? NO_BIRTHDAYS_TODAY: TODAY_BIRTHDAYS.formatted(birthdayEntityList.stream().map(t -> TODAY_BIRTHDAY_FORMAT.formatted(t.getFullName(), t.getTeam())).collect(Collectors.joining(NEW_LINE)));
+        birthdayEntityList = birthdayEntityRepository.findUpcomingBirthdays(LocalDate.now().plusDays(1), LocalDate.now().plusDays(Long.parseLong(configEntityRepository.findById("birthday_period").map(ConfigEntity::getValue).orElse("10"))));
+        messageText += birthdayEntityList.isEmpty() ? NO_NEAREST_BIRTHDAYS : NEAREST_BIRTHDAYS.formatted(birthdayEntityList.stream().map(t -> BIRTHDAY_FORMAT.formatted(t.getBirthday().getDayOfMonth(), dateTransformer.transformToRussian(t.getBirthday().getMonth().getValue()), t.getFullName(), t.getTeam())).collect(Collectors.joining(NEW_LINE)));
+        return messageText;
     }
 }

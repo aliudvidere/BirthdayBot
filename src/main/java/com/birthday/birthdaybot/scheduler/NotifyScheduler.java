@@ -18,9 +18,4 @@ public class NotifyScheduler {
     public void todayBirthdays() {
         telegramBot.sendMessages(commandService.getTodayBirthdays());
     }
-
-    @Scheduled(cron = "0 0 9 * * 1")
-    public void thisWeekBirthdays() {
-        telegramBot.sendMessages(commandService.getThisWeekBirthdays());
-    }
 }

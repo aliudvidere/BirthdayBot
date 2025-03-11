@@ -7,6 +7,7 @@ import com.birthday.birthdaybot.service.CommandService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
+import org.telegram.telegrambots.meta.api.methods.GetFile;
 import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
@@ -14,6 +15,7 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
+import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 
@@ -121,11 +123,20 @@ public class TelegramBot extends TelegramLongPollingBot {
                         }
                     }
                 }
-            }
-            else {
+            } else {
                 sendMessage(new SendMessage(update.getMessage().getChatId().toString(), COMMAND_FORMAT));
             }
-        } else if (update.hasCallbackQuery()) {
+        } else if (update.hasMessage() && update.getMessage().hasDocument()) {
+            switch (update.getMessage().getCaption()) {
+                case UPLOAD_CAPTION -> {
+                    if (commandService.checkAdmin(update.getMessage().getFrom().getUserName()) && update.getMessage().hasDocument()) {
+                        File file = getFile(update.getMessage().getDocument().getFileId());
+                        sendMessage(commandService.addPersonsFromCSV(update.getMessage().getChatId(), file));
+                    }
+                }
+            }
+        }
+        else if (update.hasCallbackQuery()) {
             DeleteMessage deleteMessage = new DeleteMessage(update.getCallbackQuery().getMessage().getChatId().toString(), update.getCallbackQuery().getMessage().getMessageId());
             deleteMessage(deleteMessage);
             switch (CallbackTypeEnum.values()[Integer.parseInt(update.getCallbackQuery().getData().split(SEMICOLON)[0])]) {
@@ -157,5 +168,18 @@ public class TelegramBot extends TelegramLongPollingBot {
         } catch (TelegramApiException e) {
             log.error(e.getMessage());
         }
+    }
+
+    private File getFile(String fileId) {
+        File file = null;
+        try {
+            GetFile getFile = new GetFile(fileId);
+            String filePath = execute(getFile).getFilePath();
+            file = downloadFile(filePath);
+        }
+        catch (Exception e) {
+            log.error(e.getMessage());
+        }
+        return file;
     }
 }

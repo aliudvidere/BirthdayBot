@@ -23,4 +23,5 @@ public interface CommandConstants {
     String START_NOTIFY_COMMAND = "start_notify";
     String DELETE_COMMAND = "delete";
     String ADD_COMMAND = "add";
+    String UPLOAD_CAPTION = "/upload";
 }

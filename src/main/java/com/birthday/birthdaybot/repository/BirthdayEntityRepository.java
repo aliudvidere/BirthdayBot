@@ -65,12 +65,58 @@ public interface BirthdayEntityRepository extends JpaRepository<BirthdayEntity, 
                                  THEN 1 \s
                                  ELSE DATE_PART('day', b.birthday)::INT\s
                              END
-                         )\s
-                         BETWEEN NOW() AND :date
-                     
-                     
+                         )\s >= :dateFrom AND 
+                         MAKE_DATE(
+                             CASE\s
+                                 WHEN MAKE_DATE(
+                                     EXTRACT(YEAR FROM CURRENT_DATE)::INT,\s
+                                     CASE\s
+                                         WHEN DATE_PART('month', b.birthday) = 2\s
+                                          AND DATE_PART('day', b.birthday) = 29\s
+                                          AND NOT (
+                                             EXTRACT(YEAR FROM CURRENT_DATE) % 4 = 0\s
+                                             AND (EXTRACT(YEAR FROM CURRENT_DATE) % 100 <> 0 OR EXTRACT(YEAR FROM CURRENT_DATE) % 400 = 0)
+                                          )\s
+                                         THEN 3 \s
+                                         ELSE DATE_PART('month', b.birthday)::INT\s
+                                     END,
+                                     CASE\s
+                                         WHEN DATE_PART('month', b.birthday) = 2\s
+                                          AND DATE_PART('day', b.birthday) = 29\s
+                                          AND NOT (
+                                             EXTRACT(YEAR FROM CURRENT_DATE) % 4 = 0\s
+                                             AND (EXTRACT(YEAR FROM CURRENT_DATE) % 100 <> 0 OR EXTRACT(YEAR FROM CURRENT_DATE) % 400 = 0)
+                                          )\s
+                                         THEN 1 \s
+                                         ELSE DATE_PART('day', b.birthday)::INT\s
+                                     END
+                                 ) < CURRENT_DATE \s
+                                 THEN EXTRACT(YEAR FROM CURRENT_DATE)::INT + 1 \s
+                                 ELSE EXTRACT(YEAR FROM CURRENT_DATE)::INT \s
+                             END,
+                             CASE\s
+                                 WHEN DATE_PART('month', b.birthday) = 2\s
+                                  AND DATE_PART('day', b.birthday) = 29\s
+                                  AND NOT (
+                                     EXTRACT(YEAR FROM CURRENT_DATE) % 4 = 0\s
+                                     AND (EXTRACT(YEAR FROM CURRENT_DATE) % 100 <> 0 OR EXTRACT(YEAR FROM CURRENT_DATE) % 400 = 0)
+                                  )\s
+                                 THEN 3 \s
+                                 ELSE DATE_PART('month', b.birthday)::INT\s
+                             END,
+                             CASE\s
+                                 WHEN DATE_PART('month', b.birthday) = 2\s
+                                  AND DATE_PART('day', b.birthday) = 29\s
+                                  AND NOT (
+                                     EXTRACT(YEAR FROM CURRENT_DATE) % 4 = 0\s
+                                     AND (EXTRACT(YEAR FROM CURRENT_DATE) % 100 <> 0 OR EXTRACT(YEAR FROM CURRENT_DATE) % 400 = 0)
+                                  )\s
+                                 THEN 1 \s
+                                 ELSE DATE_PART('day', b.birthday)::INT\s
+                             END
+                         )\s < :dateTo     
         """, nativeQuery = true)
-    List<BirthdayEntity> findUpcomingBirthdays(@Param("date") LocalDate date);
+    List<BirthdayEntity> findUpcomingBirthdays(@Param("dateFrom") LocalDate dateFrom, @Param("dateTo") LocalDate dateTo);
 
     List<BirthdayEntity> findAllByFullNameIgnoreCaseLikeOrTeamIgnoreCaseLike(String fullName, String team);
 }
