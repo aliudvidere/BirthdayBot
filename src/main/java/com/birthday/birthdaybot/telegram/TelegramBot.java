@@ -76,7 +76,9 @@ public class TelegramBot extends TelegramLongPollingBot {
                         sendMessage(commandService.getTodayBirthdays(update.getMessage().getChatId()));
                     }
                     case ADMIN_HELP_COMMAND -> {
-                            sendAdminMessage(update.getMessage().getFrom().getUserName(), new SendMessage(update.getMessage().getChatId().toString(), ADMIN_HELP));
+                        SendMessage sendMessage = new SendMessage(update.getMessage().getChatId().toString(), ADMIN_HELP);
+                        sendMessage.setParseMode(HTML);
+                        sendAdminMessage(update.getMessage().getFrom().getUserName(), sendMessage);
                     }
                     case PERIOD_COMMAND -> {
                         if (data.isEmpty()) {
