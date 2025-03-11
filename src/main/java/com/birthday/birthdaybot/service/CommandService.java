@@ -185,7 +185,7 @@ public class CommandService {
 
     }
 
-    public SendMessage callbackDeletePerson(Long chatId, String data) {
+    public SendMessage deletePersonCallback(Long chatId, String data) {
         SendMessage sendMessage = new SendMessage();
         sendMessage.setChatId(chatId);
         Optional<BirthdayEntity> birthdayEntityOptional = birthdayEntityRepository.findById(Integer.parseInt(data.split(SEMICOLON)[1]));
