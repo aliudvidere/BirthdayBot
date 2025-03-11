@@ -37,4 +37,8 @@ public class BirthdayEntity {
     public String toString() {
         return fullName + " - " + team + " - " + birthday;
     }
+
+    public String toStringForDelete() {
+        return "<b>%d</b>".formatted(id) + ". " + fullName + " - " + team + " - " + birthday;
+    }
 }

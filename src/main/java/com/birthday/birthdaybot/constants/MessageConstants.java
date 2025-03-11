@@ -4,9 +4,17 @@ public interface MessageConstants {
 
     String HELP = """
             /help - commands information
+            /nearest_birthdays - nearest birthdays information
+            /this_week_birthdays - this week birthdays information
+            /today_birthdays - today birthdays information
             """;
     String ADMIN_HELP = HELP + """
-            /period - to get period send /period, to set period send /period days, fore example /period 10 will find people with birthday in next 10 days
+            /period - to get period send /period, to set period send /period days, for example <b>/period 10</b> will find people with birthday in next 10 days
+            /people_list - get all people information
+            /find - to find person send /find name or team, for example <b>/find nttm</b> return all people with 
+                 String STOP_NOTIFY_COMMAND = "stop_notify";
+                 String START_NOTIFY_COMMAND = "start_notify";
+                 String DELETE_COMMAND = "delete";
             """;
     String COMMAND_FORMAT = "Command should start with \"/\"";
 
@@ -37,5 +45,15 @@ public interface MessageConstants {
     String STOP_NOTIFY = "Notification about birthdays were stopped in this chat";
 
     String START_NOTIFY = "Notification about birthdays were started in this chat";
+
+    String TOO_MANY_RESULTS = "Too many results";
+
+    String CHOOSE_PERSON_TO_DELETE = "Choose person to delete: \n%s";
+
+    String HTML = "html";
+
+    String PERSON_WAS_DELETED = "%s was deleted";
+
+    String PERSON_WAS_NOT_DELETED = "Person was not deleted due to some error";
 }
 

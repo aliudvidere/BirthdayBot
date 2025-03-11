@@ -2,6 +2,7 @@ package com.birthday.birthdaybot.telegram;
 
 
 import com.birthday.birthdaybot.config.BotProperties;
+import com.birthday.birthdaybot.constants.CallbackTypeEnum;
 import com.birthday.birthdaybot.service.CommandService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -97,10 +98,21 @@ public class TelegramBot extends TelegramLongPollingBot {
                     case START_NOTIFY_COMMAND -> {
                         sendAdminMessage(update.getMessage(), commandService.startNotify(update.getMessage().getChatId()));
                     }
+                    case DELETE_COMMAND -> {
+                        sendAdminMessage(update.getMessage(), commandService.deletePerson(update.getMessage().getChatId(), data));
+                    }
                 }
             }
             else {
                 sendMessage(new SendMessage(update.getMessage().getChatId().toString(), COMMAND_FORMAT));
+            }
+        } else if (update.hasCallbackQuery()) {
+            DeleteMessage deleteMessage = new DeleteMessage(update.getCallbackQuery().getMessage().getChatId().toString(), update.getCallbackQuery().getMessage().getMessageId());
+            deleteMessage(deleteMessage);
+            switch (CallbackTypeEnum.values()[Integer.parseInt(update.getCallbackQuery().getData().split(SEMICOLON)[0])]) {
+                case CallbackTypeEnum.DELETE -> {
+                    sendMessage(new SendMessage(update.getCallbackQuery().getMessage().getChatId().toString(), update.getCallbackQuery().getData()));
+                }
             }
         }
     }

@@ -1,5 +1,6 @@
 package com.birthday.birthdaybot.service;
 
+import com.birthday.birthdaybot.constants.CallbackTypeEnum;
 import com.birthday.birthdaybot.constants.RoleEnum;
 import com.birthday.birthdaybot.model.entity.BirthdayEntity;
 import com.birthday.birthdaybot.model.entity.BotChatEntity;
@@ -14,6 +15,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 
 import java.time.LocalDate;
 import java.util.*;
@@ -166,6 +169,37 @@ public class CommandService {
         return getPeopleList(chatId, birthdayEntityList);
     }
 
+    public SendMessage deletePerson(Long chatId, String data) {
+        SendMessage sendMessage = new SendMessage();
+        sendMessage.setChatId(chatId);
+        List<BirthdayEntity> birthdayEntityList = birthdayEntityRepository.findAllByFullNameIgnoreCaseLikeOrTeamIgnoreCaseLike(FIND_TEMPLATE.formatted(data), FIND_TEMPLATE.formatted(data));
+        if (birthdayEntityList.size() > 10) {
+            sendMessage.setText(TOO_MANY_RESULTS);
+        }
+        else {
+            sendMessage.setText(CHOOSE_PERSON_TO_DELETE.formatted(birthdayEntityList.stream().map(BirthdayEntity::toStringForDelete).collect(Collectors.joining(NEW_LINE))));
+            sendMessage.setParseMode(HTML);
+            addKeyboardForDelete(sendMessage, birthdayEntityList);
+        }
+        return sendMessage;
+
+    }
+
+    public SendMessage callbackDeletePerson(Long chatId, String data) {
+        SendMessage sendMessage = new SendMessage();
+        sendMessage.setChatId(chatId);
+        Optional<BirthdayEntity> birthdayEntityOptional = birthdayEntityRepository.findById(Integer.parseInt(data.split(SEMICOLON)[1]));
+        if (birthdayEntityOptional.isPresent()) {
+            sendMessage.setText(PERSON_WAS_DELETED.formatted(birthdayEntityOptional.get().toString()));
+            birthdayEntityRepository.delete(birthdayEntityOptional.get());
+        }
+        else {
+            sendMessage.setText(PERSON_WAS_NOT_DELETED);
+        }
+        return sendMessage;
+
+    }
+
     private List<SendMessage> getPeopleList(Long chatId, List<BirthdayEntity> birthdayEntityList) {
         List<SendMessage> messageList = new ArrayList<>();
         int i = 0;
@@ -174,5 +208,20 @@ public class CommandService {
             i += 10;
         }
         return messageList;
+    }
+
+    private void addKeyboardForDelete(SendMessage sendMessage, List<BirthdayEntity> birthdayEntityList) {
+        InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
+        List<InlineKeyboardButton> keyboardButtons = new ArrayList<>();
+        for (BirthdayEntity birthdayEntity: birthdayEntityList) {
+            InlineKeyboardButton inlineKeyboardButton = new InlineKeyboardButton();
+            inlineKeyboardButton.setText(birthdayEntity.getId().toString());
+            inlineKeyboardButton.setCallbackData(CallbackTypeEnum.DELETE.ordinal() + SEMICOLON +birthdayEntity.getId());
+            keyboardButtons.add(inlineKeyboardButton);
+        }
+        List<List<InlineKeyboardButton>> rowList = new ArrayList<>();
+        keyboardButtons.forEach(t -> rowList.add(List.of(t)));
+        inlineKeyboardMarkup.setKeyboard(rowList);
+        sendMessage.setReplyMarkup(inlineKeyboardMarkup);
     }
 }

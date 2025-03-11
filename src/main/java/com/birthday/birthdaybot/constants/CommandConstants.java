@@ -21,4 +21,6 @@ public interface CommandConstants {
     String FIND_COMMAND= "find";
     String STOP_NOTIFY_COMMAND = "stop_notify";
     String START_NOTIFY_COMMAND = "start_notify";
+    String DELETE_COMMAND = "delete";
+    String ADD_COMMAND = "add";
 }
