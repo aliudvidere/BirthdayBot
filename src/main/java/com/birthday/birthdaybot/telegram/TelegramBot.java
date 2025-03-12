@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.GetFile;
 import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
+import org.telegram.telegrambots.meta.api.methods.send.SendDocument;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
@@ -122,6 +123,11 @@ public class TelegramBot extends TelegramLongPollingBot {
                             sendMessage(commandService.addPerson(update.getMessage().getChatId(), data));
                         }
                     }
+                    case EXPORT_COMMAND -> {
+                        if (commandService.checkAdmin(update.getMessage().getFrom().getUserName())) {
+                            sendDocument(commandService.export(update.getMessage().getChatId()));
+                        }
+                    }
                 }
             }
         } else if (update.hasMessage() && update.getMessage().hasDocument()) {
@@ -151,6 +157,14 @@ public class TelegramBot extends TelegramLongPollingBot {
     public void sendMessage(SendMessage sendMessage) {
         try {
             execute(sendMessage);
+        } catch (TelegramApiException e) {
+            log.error(e.getMessage());
+        }
+    }
+
+    public void sendDocument(SendDocument sendDocument) {
+        try {
+            execute(sendDocument);
         } catch (TelegramApiException e) {
             log.error(e.getMessage());
         }

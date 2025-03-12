@@ -13,13 +13,18 @@ import com.birthday.birthdaybot.repository.ConfigEntityRepository;
 import com.birthday.birthdaybot.utils.DateTransformer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFFont;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
+import org.telegram.telegrambots.meta.api.methods.send.SendDocument;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 
-import java.io.File;
+import java.io.*;
 import java.nio.file.Files;
 import java.time.LocalDate;
 import java.util.*;
@@ -217,7 +222,7 @@ public class CommandService {
     }
 
     public SendMessage addPersonsFromCSV(Long chatId, File file) {
-        List<List<String>> records = List.of();
+        List<List<String>> records;
         SendMessage sendMessage = new SendMessage();
         sendMessage.setChatId(chatId);
         String messageText;
@@ -240,6 +245,85 @@ public class CommandService {
             messageText = e.getMessage();
         }
         return new SendMessage(chatId.toString(), messageText);
+    }
+
+    public SendDocument export(Long chatId) {
+        SendDocument sendDocument = new SendDocument();
+        List<BirthdayEntity> birthdayEntityList = birthdayEntityRepository.findAll();
+        XSSFWorkbook workbook = new XSSFWorkbook();
+
+        Sheet sheet = workbook.createSheet("Birthdays");
+        Row header = sheet.createRow(0);
+
+        CellStyle headerStyle = workbook.createCellStyle();
+
+        XSSFFont font = workbook.createFont();
+        font.setFontName("Arial");
+        font.setBold(true);
+        headerStyle.setFont(font);
+
+        Cell headerCell = header.createCell(0);
+        headerCell.setCellValue("Fullname");
+        headerCell.setCellStyle(headerStyle);
+
+        headerCell = header.createCell(1);
+        headerCell.setCellValue("Login");
+        headerCell.setCellStyle(headerStyle);
+
+        headerCell = header.createCell(2);
+        headerCell.setCellValue("Team");
+        headerCell.setCellStyle(headerStyle);
+
+        headerCell = header.createCell(3);
+        headerCell.setCellValue("Birthday");
+        headerCell.setCellStyle(headerStyle);
+
+        CellStyle style = workbook.createCellStyle();
+        style.setWrapText(true);
+
+        CellStyle dateStyle = workbook.createCellStyle();
+        dateStyle.setWrapText(true);
+        CreationHelper createHelper = workbook.getCreationHelper();
+        dateStyle.setDataFormat(createHelper.createDataFormat().getFormat("yyyy-MM-dd"));
+
+        for (int i = 0; i < birthdayEntityList.size(); i++) {
+            Row row = sheet.createRow(i + 2);
+            Cell cell = row.createCell(0);
+            cell.setCellValue(birthdayEntityList.get(i).getFullName());
+            cell.setCellStyle(style);
+
+            cell = row.createCell(1);
+            cell.setCellValue(birthdayEntityList.get(i).getLogin());
+            cell.setCellStyle(style);
+
+            cell = row.createCell(2);
+            cell.setCellValue(birthdayEntityList.get(i).getTeam());
+            cell.setCellStyle(style);
+
+            cell = row.createCell(3);
+            cell.setCellValue(birthdayEntityList.get(i).getBirthday());
+            cell.setCellStyle(dateStyle);
+        }
+        sheet.autoSizeColumn(3);
+        InputFile inputFile = null;
+        try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+            workbook.write(outputStream);
+            workbook.close();
+
+            byte[] fileBytes = outputStream.toByteArray();
+
+            InputStream inputStream = new ByteArrayInputStream(fileBytes);
+            inputFile = new InputFile(inputStream, "birthday.xlsx");
+
+            sendDocument.setDocument(inputFile);
+        } catch (IOException e) {
+            sendDocument.setCaption(e.getMessage());
+        }
+        if (inputFile != null) {
+            sendDocument.setChatId(chatId);
+            sendDocument.setDocument(inputFile);
+        }
+        return sendDocument;
     }
 
     private List<SendMessage> getPeopleList(Long chatId, List<BirthdayEntity> birthdayEntityList) {
