@@ -13,110 +13,46 @@ import java.util.List;
 public interface BirthdayEntityRepository extends JpaRepository<BirthdayEntity, Integer> {
 
         @Query(value = """
-
-                SELECT *\s
-                     FROM birthday b\s
-                     WHERE\s
-                         MAKE_DATE(
-                             CASE\s
-                                 WHEN MAKE_DATE(
-                                     EXTRACT(YEAR FROM CURRENT_DATE)::INT,\s
-                                     CASE\s
-                                         WHEN DATE_PART('month', b.birthday) = 2\s
-                                          AND DATE_PART('day', b.birthday) = 29\s
-                                          AND NOT (
-                                             EXTRACT(YEAR FROM CURRENT_DATE) % 4 = 0\s
-                                             AND (EXTRACT(YEAR FROM CURRENT_DATE) % 100 <> 0 OR EXTRACT(YEAR FROM CURRENT_DATE) % 400 = 0)
-                                          )\s
-                                         THEN 3 \s
-                                         ELSE DATE_PART('month', b.birthday)::INT\s
-                                     END,
-                                     CASE\s
-                                         WHEN DATE_PART('month', b.birthday) = 2\s
-                                          AND DATE_PART('day', b.birthday) = 29\s
-                                          AND NOT (
-                                             EXTRACT(YEAR FROM CURRENT_DATE) % 4 = 0\s
-                                             AND (EXTRACT(YEAR FROM CURRENT_DATE) % 100 <> 0 OR EXTRACT(YEAR FROM CURRENT_DATE) % 400 = 0)
-                                          )\s
-                                         THEN 1 \s
-                                         ELSE DATE_PART('day', b.birthday)::INT\s
-                                     END
-                                 ) < CURRENT_DATE \s
-                                 THEN EXTRACT(YEAR FROM CURRENT_DATE)::INT + 1 \s
-                                 ELSE EXTRACT(YEAR FROM CURRENT_DATE)::INT \s
-                             END,
-                             CASE\s
-                                 WHEN DATE_PART('month', b.birthday) = 2\s
-                                  AND DATE_PART('day', b.birthday) = 29\s
-                                  AND NOT (
-                                     EXTRACT(YEAR FROM CURRENT_DATE) % 4 = 0\s
-                                     AND (EXTRACT(YEAR FROM CURRENT_DATE) % 100 <> 0 OR EXTRACT(YEAR FROM CURRENT_DATE) % 400 = 0)
-                                  )\s
-                                 THEN 3 \s
-                                 ELSE DATE_PART('month', b.birthday)::INT\s
-                             END,
-                             CASE\s
-                                 WHEN DATE_PART('month', b.birthday) = 2\s
-                                  AND DATE_PART('day', b.birthday) = 29\s
-                                  AND NOT (
-                                     EXTRACT(YEAR FROM CURRENT_DATE) % 4 = 0\s
-                                     AND (EXTRACT(YEAR FROM CURRENT_DATE) % 100 <> 0 OR EXTRACT(YEAR FROM CURRENT_DATE) % 400 = 0)
-                                  )\s
-                                 THEN 1 \s
-                                 ELSE DATE_PART('day', b.birthday)::INT\s
-                             END
-                         )\s >= :dateFrom AND 
-                         MAKE_DATE(
-                             CASE\s
-                                 WHEN MAKE_DATE(
-                                     EXTRACT(YEAR FROM CURRENT_DATE)::INT,\s
-                                     CASE\s
-                                         WHEN DATE_PART('month', b.birthday) = 2\s
-                                          AND DATE_PART('day', b.birthday) = 29\s
-                                          AND NOT (
-                                             EXTRACT(YEAR FROM CURRENT_DATE) % 4 = 0\s
-                                             AND (EXTRACT(YEAR FROM CURRENT_DATE) % 100 <> 0 OR EXTRACT(YEAR FROM CURRENT_DATE) % 400 = 0)
-                                          )\s
-                                         THEN 3 \s
-                                         ELSE DATE_PART('month', b.birthday)::INT\s
-                                     END,
-                                     CASE\s
-                                         WHEN DATE_PART('month', b.birthday) = 2\s
-                                          AND DATE_PART('day', b.birthday) = 29\s
-                                          AND NOT (
-                                             EXTRACT(YEAR FROM CURRENT_DATE) % 4 = 0\s
-                                             AND (EXTRACT(YEAR FROM CURRENT_DATE) % 100 <> 0 OR EXTRACT(YEAR FROM CURRENT_DATE) % 400 = 0)
-                                          )\s
-                                         THEN 1 \s
-                                         ELSE DATE_PART('day', b.birthday)::INT\s
-                                     END
-                                 ) < CURRENT_DATE \s
-                                 THEN EXTRACT(YEAR FROM CURRENT_DATE)::INT + 1 \s
-                                 ELSE EXTRACT(YEAR FROM CURRENT_DATE)::INT \s
-                             END,
-                             CASE\s
-                                 WHEN DATE_PART('month', b.birthday) = 2\s
-                                  AND DATE_PART('day', b.birthday) = 29\s
-                                  AND NOT (
-                                     EXTRACT(YEAR FROM CURRENT_DATE) % 4 = 0\s
-                                     AND (EXTRACT(YEAR FROM CURRENT_DATE) % 100 <> 0 OR EXTRACT(YEAR FROM CURRENT_DATE) % 400 = 0)
-                                  )\s
-                                 THEN 3 \s
-                                 ELSE DATE_PART('month', b.birthday)::INT\s
-                             END,
-                             CASE\s
-                                 WHEN DATE_PART('month', b.birthday) = 2\s
-                                  AND DATE_PART('day', b.birthday) = 29\s
-                                  AND NOT (
-                                     EXTRACT(YEAR FROM CURRENT_DATE) % 4 = 0\s
-                                     AND (EXTRACT(YEAR FROM CURRENT_DATE) % 100 <> 0 OR EXTRACT(YEAR FROM CURRENT_DATE) % 400 = 0)
-                                  )\s
-                                 THEN 1 \s
-                                 ELSE DATE_PART('day', b.birthday)::INT\s
-                             END
-                         )\s < :dateTo     
-        """, nativeQuery = true)
+        WITH adjusted_birthdays AS (
+            SELECT 
+                b.*, 
+                MAKE_DATE(
+                    CASE 
+                        WHEN MAKE_DATE(EXTRACT(YEAR FROM CURRENT_DATE)::INT, 
+                                       DATE_PART('month', b.birthday)::INT, 
+                                       DATE_PART('day', b.birthday)::INT) 
+                             < CURRENT_DATE 
+                        THEN EXTRACT(YEAR FROM CURRENT_DATE)::INT + 1 
+                        ELSE EXTRACT(YEAR FROM CURRENT_DATE)::INT 
+                    END,
+                    CASE 
+                        WHEN DATE_PART('month', b.birthday) = 2 
+                         AND DATE_PART('day', b.birthday) = 29 
+                         AND NOT (EXTRACT(YEAR FROM CURRENT_DATE) % 4 = 0 
+                                  AND (EXTRACT(YEAR FROM CURRENT_DATE) % 100 <> 0 
+                                       OR EXTRACT(YEAR FROM CURRENT_DATE) % 400 = 0)) 
+                        THEN 3  -- Adjust leap year birthdays to March 1st
+                        ELSE DATE_PART('month', b.birthday)::INT 
+                    END,
+                    CASE 
+                        WHEN DATE_PART('month', b.birthday) = 2 
+                         AND DATE_PART('day', b.birthday) = 29 
+                         AND NOT (EXTRACT(YEAR FROM CURRENT_DATE) % 4 = 0 
+                                  AND (EXTRACT(YEAR FROM CURRENT_DATE) % 100 <> 0 
+                                       OR EXTRACT(YEAR FROM CURRENT_DATE) % 400 = 0)) 
+                        THEN 1  -- Adjust leap year birthdays to March 1st
+                        ELSE DATE_PART('day', b.birthday)::INT 
+                    END
+                ) AS next_birthday
+            FROM birthday b
+        )
+        SELECT * FROM adjusted_birthdays 
+        WHERE next_birthday >= :dateFrom 
+          AND next_birthday < :dateTo
+        ORDER BY next_birthday
+    """, nativeQuery = true)
     List<BirthdayEntity> findUpcomingBirthdays(@Param("dateFrom") LocalDate dateFrom, @Param("dateTo") LocalDate dateTo);
+
 
     List<BirthdayEntity> findAllByFullNameIgnoreCaseLikeOrTeamIgnoreCaseLike(String fullName, String team);
 }
