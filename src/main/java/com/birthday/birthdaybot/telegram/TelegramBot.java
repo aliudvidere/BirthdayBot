@@ -123,8 +123,6 @@ public class TelegramBot extends TelegramLongPollingBot {
                         }
                     }
                 }
-            } else {
-                sendMessage(new SendMessage(update.getMessage().getChatId().toString(), COMMAND_FORMAT));
             }
         } else if (update.hasMessage() && update.getMessage().hasDocument()) {
             switch (update.getMessage().getCaption()) {
