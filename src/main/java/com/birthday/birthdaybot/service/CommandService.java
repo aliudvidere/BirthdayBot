@@ -86,6 +86,7 @@ public class CommandService {
         return new SendMessage(chatId.toString(), STOP_NOTIFY);
     }
 
+
     public SendMessage startNotify(Long chatId) {
         Optional<BotChatEntity> botChatEntityOptional = botChatEntityRepository.findByChatId(chatId.toString());
         BotChatEntity botChatEntity;

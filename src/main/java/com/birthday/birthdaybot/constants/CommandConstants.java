@@ -3,7 +3,10 @@ package com.birthday.birthdaybot.constants;
 public interface CommandConstants {
 
     String START_COMMAND = "start";
-    String START_COMMAND_DESCRIPTION = "Starts the bot";
+    String START_COMMAND_DESCRIPTION = "Start the bot";
+
+    String STOP_COMMAND = "stop";
+    String STOP_COMMAND_DESCRIPTION = "Stop the bot";
 
     String NEAREST_BIRTHDAYS_COMMAND = "nearest_birthdays";
     String NEAREST_BIRTHDAYS_COMMAND_DESCRIPTION = "Get nearest birthdays";

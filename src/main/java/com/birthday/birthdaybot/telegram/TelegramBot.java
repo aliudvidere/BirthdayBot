@@ -35,6 +35,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     List<BotCommand> commands = Arrays.asList(
             new BotCommand(START_COMMAND, START_COMMAND_DESCRIPTION),
+            new BotCommand(STOP_COMMAND, STOP_COMMAND_DESCRIPTION),
             new BotCommand(NEAREST_BIRTHDAYS_COMMAND, NEAREST_BIRTHDAYS_COMMAND_DESCRIPTION),
             new BotCommand(THIS_WEEK_BIRTHDAYS_COMMAND, THIS_WEEK_BIRTHDAYS_COMMAND_DESCRIPTION),
             new BotCommand(TODAY_BIRTHDAYS_COMMAND, TODAY_BIRTHDAYS_COMMAND_DESCRIPTION)
@@ -64,6 +65,9 @@ public class TelegramBot extends TelegramLongPollingBot {
                     case START_COMMAND -> {
                         commandService.register(update.getMessage());
                         sendMessage(new SendMessage(update.getMessage().getChatId().toString(), HELP));
+                    }
+                    case STOP_COMMAND -> {
+                        sendMessage(commandService.stopNotify(update.getMessage().getChatId()));
                     }
                     case HELP_COMMAND -> {
                         sendMessage(new SendMessage(update.getMessage().getChatId().toString(), HELP));
