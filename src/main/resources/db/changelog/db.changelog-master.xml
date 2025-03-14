@@ -16,4 +16,6 @@
 
     <include file="changesets/loadConfigTable/loadConfigTable.xml" relativeToChangelogFile="true"/>
 
+    <include file="changesets/addLanguageColumn/addLanguageColumn.xml" relativeToChangelogFile="true"/>
+
 </databaseChangeLog>

@@ -1,6 +1,7 @@
 package com.birthday.birthdaybot.service;
 
 import com.birthday.birthdaybot.constants.CallbackTypeEnum;
+import com.birthday.birthdaybot.constants.LangugeEnum;
 import com.birthday.birthdaybot.constants.RoleEnum;
 import com.birthday.birthdaybot.model.entity.BirthdayEntity;
 import com.birthday.birthdaybot.model.entity.BotChatEntity;
@@ -48,7 +49,7 @@ public class CommandService {
 
     private final DateTransformer dateTransformer;
 
-    public void register(Message message) {
+    public SendMessage register(Message message) {
         if (!message.getFrom().getUserName().isEmpty()) {
             Optional<BotUserEntity> botUserEntityOptional = botUserEntityRepository.findByUsername(message.getFrom().getUserName());
             if (botUserEntityOptional.isEmpty()) {
@@ -66,39 +67,62 @@ public class CommandService {
             botChatEntity.setNeedNotify(true);
         }
         botChatEntityRepository.save(botChatEntity);
+        return new SendMessage(botChatEntity.getChatId(), getHelpMessage(botChatEntity));
+    }
+
+    public SendMessage help(Long chatId) {
+        SendMessage sendMessage = new SendMessage();
+        sendMessage.setChatId(chatId);
+        Optional<BotChatEntity> botChatEntityOptional = botChatEntityRepository.findByChatId(chatId.toString());
+        if (botChatEntityOptional.isPresent()) {
+            sendMessage.setText(getHelpMessage(botChatEntityOptional.get()));
+        }
+        else {
+            sendMessage = startBot(chatId);
+        }
+        return sendMessage;
+    }
+
+    public SendMessage adminHelp(Long chatId) {
+        SendMessage sendMessage;
+        Optional<BotChatEntity> botChatEntityOptional = botChatEntityRepository.findByChatId(chatId.toString());
+        if (botChatEntityOptional.isEmpty()) {
+            sendMessage = startBot(chatId);
+        }
+        else {
+            sendMessage = new SendMessage(chatId.toString(), getAdminHelpMessage(botChatEntityOptional.get()));
+            sendMessage.setParseMode(HTML);
+        }
+        return sendMessage;
     }
 
     public SendMessage stopNotify(Long chatId) {
+        SendMessage sendMessage;
         Optional<BotChatEntity> botChatEntityOptional = botChatEntityRepository.findByChatId(chatId.toString());
-        BotChatEntity botChatEntity;
         if (botChatEntityOptional.isEmpty()) {
-            botChatEntity = BotChatEntity
-                    .builder()
-                    .chatId(chatId.toString())
-                    .needNotify(false)
-                    .build();
+            sendMessage = startBot(chatId);
         }
         else {
-            botChatEntity = botChatEntityOptional.get();
-            botChatEntity.setNeedNotify(false);
+            botChatEntityOptional.get().setNeedNotify(false);
+            botChatEntityRepository.save(botChatEntityOptional.get());
+            sendMessage = new SendMessage(chatId.toString(), STOP_NOTIFY);
         }
-        botChatEntityRepository.save(botChatEntity);
-        return new SendMessage(chatId.toString(), STOP_NOTIFY);
+        return sendMessage;
     }
 
 
     public SendMessage startNotify(Long chatId) {
+        SendMessage sendMessage;
         Optional<BotChatEntity> botChatEntityOptional = botChatEntityRepository.findByChatId(chatId.toString());
-        BotChatEntity botChatEntity;
         if (botChatEntityOptional.isEmpty()) {
-            botChatEntity = new BotChatEntity(chatId.toString());
+            sendMessage = startBot(chatId);
         }
         else {
-            botChatEntity = botChatEntityOptional.get();
-            botChatEntity.setNeedNotify(true);
+            botChatEntityOptional.get().setNeedNotify(true);
+            botChatEntityRepository.save(botChatEntityOptional.get());
+            sendMessage = new SendMessage(chatId.toString(), START_NOTIFY);
         }
-        botChatEntityRepository.save(botChatEntity);
-        return new SendMessage(chatId.toString(), START_NOTIFY);
+        return sendMessage;
     }
 
     public boolean checkAdmin(String username) {
@@ -110,37 +134,58 @@ public class CommandService {
 
 
     public SendMessage getNearestBirthdays(Long chatId) {
-        SendMessage sendMessage = new SendMessage(chatId.toString(), getBirthdayMessage(Long.parseLong(configEntityRepository.findById("birthday_period").map(ConfigEntity::getValue).orElse("10"))));
-        sendMessage.setParseMode(HTML);
+        SendMessage sendMessage;
+        if (!botChatEntityRepository.existsByChatId(chatId.toString())) {
+            sendMessage = startBot(chatId);
+        }
+        else {
+            sendMessage = new SendMessage(chatId.toString(), getBirthdayMessage(Long.parseLong(configEntityRepository.findById("birthday_period").map(ConfigEntity::getValue).orElse("10"))));
+            sendMessage.setParseMode(HTML);
+        }
         return sendMessage;
     }
 
     public SendMessage getPeriod(Long chatId) {
-        return new SendMessage(chatId.toString(), configEntityRepository.findById("birthday_period").map(ConfigEntity::getValue).orElse("-1"));
+        SendMessage sendMessage;
+        if (!botChatEntityRepository.existsByChatId(chatId.toString())) {
+            sendMessage = startBot(chatId);
+        }
+        else {
+            sendMessage = new SendMessage(chatId.toString(), configEntityRepository.findById("birthday_period").map(ConfigEntity::getValue).orElse("-1"));
+        }
+        return sendMessage;
     }
 
     public SendMessage setPeriod(Long chatId, String data) {
-        String messageText;
-        try {
-            ConfigEntity configEntity = configEntityRepository.findById("birthday_period").orElseThrow();
-            int period = Integer.parseInt(data);
-            if (period <= 0) {
-                throw new Exception(PERIOD_FORMAT_ERROR);
+        SendMessage sendMessage;
+        if (!botChatEntityRepository.existsByChatId(chatId.toString())) {
+            sendMessage = startBot(chatId);
+        }
+        else {
+            String messageText;
+            try {
+                ConfigEntity configEntity = configEntityRepository.findById("birthday_period").orElseThrow();
+                int period = Integer.parseInt(data);
+                if (period <= 0) {
+                    throw new Exception(PERIOD_FORMAT_ERROR);
+                }
+                configEntity.setValue(data);
+                configEntityRepository.save(configEntity);
+                messageText = PERIOD_WAS_SET.formatted(period);
+            } catch (NumberFormatException e) {
+                messageText = PERIOD_FORMAT_ERROR;
+            } catch (Exception e) {
+                messageText = e.getMessage();
             }
-            configEntity.setValue(data);
-            configEntityRepository.save(configEntity);
-            messageText = PERIOD_WAS_SET.formatted(period);
+            sendMessage = new SendMessage(chatId.toString(), messageText);
         }
-        catch (NumberFormatException e) {
-            messageText = PERIOD_FORMAT_ERROR;
-        }
-        catch (Exception e) {
-            messageText = e.getMessage();
-        }
-        return new SendMessage(chatId.toString(), messageText);
+        return sendMessage;
     }
 
     public List<SendMessage> getPeopleList(Long chatId) {
+        if (!botChatEntityRepository.existsByChatId(chatId.toString())) {
+            return List.of(startBot(chatId));
+        }
         List<BirthdayEntity> birthdayEntityList = birthdayEntityRepository.findAll();
         return getPeopleList(chatId, birthdayEntityList);
     }
@@ -155,14 +200,26 @@ public class CommandService {
     }
 
     public SendMessage getTodayBirthdays(Long chatId) {
-        SendMessage sendMessage = new SendMessage(chatId.toString(), getTodayMessage());
-        sendMessage.setParseMode(HTML);
+        SendMessage sendMessage;
+        if (!botChatEntityRepository.existsByChatId(chatId.toString())) {
+            sendMessage = startBot(chatId);
+        }
+        else {
+            sendMessage = new SendMessage(chatId.toString(), getTodayMessage());
+            sendMessage.setParseMode(HTML);
+        }
         return sendMessage;
     }
 
     public SendMessage getThisWeekBirthdays(Long chatId) {
-        SendMessage sendMessage = new SendMessage(chatId.toString(), getBirthdayMessage(7L));
-        sendMessage.setParseMode(HTML);
+        SendMessage sendMessage;
+        if (!botChatEntityRepository.existsByChatId(chatId.toString())) {
+            sendMessage = startBot(chatId);
+        }
+        else {
+            sendMessage = new SendMessage(chatId.toString(), getBirthdayMessage(7L));
+            sendMessage.setParseMode(HTML);
+        }
         return sendMessage;
     }
 
@@ -172,16 +229,21 @@ public class CommandService {
     }
 
     public SendMessage deletePerson(Long chatId, String data) {
-        SendMessage sendMessage = new SendMessage();
-        sendMessage.setChatId(chatId);
-        List<BirthdayEntity> birthdayEntityList = birthdayEntityRepository.findAllByFullNameIgnoreCaseLikeOrTeamIgnoreCaseLike(FIND_TEMPLATE.formatted(data), FIND_TEMPLATE.formatted(data));
-        if (birthdayEntityList.size() > 10) {
-            sendMessage.setText(TOO_MANY_RESULTS);
+        SendMessage sendMessage;
+        if (!botChatEntityRepository.existsByChatId(chatId.toString())) {
+            sendMessage = startBot(chatId);
         }
         else {
-            sendMessage.setText(CHOOSE_PERSON_TO_DELETE.formatted(birthdayEntityList.stream().map(BirthdayEntity::toStringForDelete).collect(Collectors.joining(NEW_LINE))));
-            sendMessage.setParseMode(HTML);
-            addKeyboardForDelete(sendMessage, birthdayEntityList);
+            sendMessage = new SendMessage();
+            sendMessage.setChatId(chatId);
+            List<BirthdayEntity> birthdayEntityList = birthdayEntityRepository.findAllByFullNameIgnoreCaseLikeOrTeamIgnoreCaseLike(FIND_TEMPLATE.formatted(data), FIND_TEMPLATE.formatted(data));
+            if (birthdayEntityList.size() > 10) {
+                sendMessage.setText(TOO_MANY_RESULTS);
+            } else {
+                sendMessage.setText(CHOOSE_PERSON_TO_DELETE.formatted(birthdayEntityList.stream().map(BirthdayEntity::toStringForDelete).collect(Collectors.joining(NEW_LINE))));
+                sendMessage.setParseMode(HTML);
+                addKeyboardForDelete(sendMessage, birthdayEntityList);
+            }
         }
         return sendMessage;
 
@@ -203,52 +265,67 @@ public class CommandService {
     }
 
     public SendMessage addPerson(Long chatId, String data) {
-        SendMessage sendMessage = new SendMessage();
-        sendMessage.setChatId(chatId);
-        String[] fields = data.split(COMMA);
-        try {
-            BirthdayEntity birthdayEntity = BirthdayEntity
-                    .builder()
-                    .fullName(fields[0].trim())
-                    .login(fields[1].trim())
-                    .team(fields[2].trim())
-                    .birthday(LocalDate.parse(fields[3].trim()))
-                    .build();
-            birthdayEntityRepository.save(birthdayEntity);
-            sendMessage.setText(PERSON_WAS_CREATED.formatted(birthdayEntity.toString()));
-        } catch (Exception e) {
-            sendMessage.setText(e.getMessage());
+        SendMessage sendMessage;
+        if (!botChatEntityRepository.existsByChatId(chatId.toString())) {
+            sendMessage = startBot(chatId);
+        }
+        else {
+            sendMessage = new SendMessage();
+            sendMessage.setChatId(chatId);
+            String[] fields = data.split(COMMA);
+            try {
+                BirthdayEntity birthdayEntity = BirthdayEntity
+                        .builder()
+                        .fullName(fields[0].trim())
+                        .login(fields[1].trim())
+                        .team(fields[2].trim())
+                        .birthday(LocalDate.parse(fields[3].trim()))
+                        .build();
+                birthdayEntityRepository.save(birthdayEntity);
+                sendMessage.setText(PERSON_WAS_CREATED.formatted(birthdayEntity.toString()));
+            } catch (Exception e) {
+                sendMessage.setText(e.getMessage());
+            }
         }
         return sendMessage;
     }
 
     public SendMessage addPersonsFromCSV(Long chatId, File file) {
-        List<List<String>> records;
-        SendMessage sendMessage = new SendMessage();
-        sendMessage.setChatId(chatId);
-        String messageText;
-        try {
-            records = Files.readAllLines(file.toPath())
-                    .stream()
-                    .map(line -> Arrays.asList(line.split(COMMA)))
-                    .toList();
-            List<BirthdayEntity> birthdayEntityList = records.stream().map(t -> BirthdayEntity
-                    .builder()
-                    .fullName(t.get(0).trim())
-                    .login(t.get(1).trim())
-                    .team(t.get(2).trim())
-                    .birthday(LocalDate.parse(t.get(3).trim()))
-                    .build())
-                    .toList();
-            birthdayEntityRepository.saveAll(birthdayEntityList);
-            messageText = ADDED_NEW_PERSONS.formatted(birthdayEntityList.size());
-        } catch (Exception e) {
-            messageText = e.getMessage();
+        SendMessage sendMessage;
+        if (!botChatEntityRepository.existsByChatId(chatId.toString())) {
+            sendMessage = startBot(chatId);
         }
-        return new SendMessage(chatId.toString(), messageText);
+        else {
+            List<List<String>> records;
+            sendMessage = new SendMessage();
+            sendMessage.setChatId(chatId);
+            try {
+                records = Files.readAllLines(file.toPath())
+                        .stream()
+                        .map(line -> Arrays.asList(line.split(COMMA)))
+                        .toList();
+                List<BirthdayEntity> birthdayEntityList = records.stream().map(t -> BirthdayEntity
+                                .builder()
+                                .fullName(t.get(0).trim())
+                                .login(t.get(1).trim())
+                                .team(t.get(2).trim())
+                                .birthday(LocalDate.parse(t.get(3).trim()))
+                                .build())
+                        .toList();
+                birthdayEntityRepository.saveAll(birthdayEntityList);
+                sendMessage.setText(ADDED_NEW_PERSONS.formatted(birthdayEntityList.size()));
+            } catch (Exception e) {
+                sendMessage.setText(e.getMessage());
+            }
+        }
+        return sendMessage;
     }
 
     public SendDocument export(Long chatId) {
+        if (!botChatEntityRepository.existsByChatId(chatId.toString())) {
+            BotChatEntity botChatEntity = new BotChatEntity(chatId.toString());
+            botChatEntityRepository.save(botChatEntity);
+        }
         SendDocument sendDocument = new SendDocument();
         List<BirthdayEntity> birthdayEntityList = birthdayEntityRepository.findAll();
         XSSFWorkbook workbook = new XSSFWorkbook();
@@ -327,6 +404,39 @@ public class CommandService {
         return sendDocument;
     }
 
+    public SendMessage chooseLanguage(Long chatId) {
+        SendMessage sendMessage;
+        Optional<BotChatEntity> botChatEntityOptional = botChatEntityRepository.findByChatId(chatId.toString());
+        if (botChatEntityOptional.isEmpty()) {
+            sendMessage = startBot(chatId);
+        }
+        else {
+            sendMessage = new SendMessage(chatId.toString(), CHOOSE_LANGUAGE);
+            addKeyboardForLanguage(sendMessage);
+        }
+        return sendMessage;
+    }
+
+    public SendMessage chooseLanguageCallback(Long chatId, String data) {
+        Optional<BotChatEntity> botChatEntityOptional = botChatEntityRepository.findByChatId(chatId.toString());
+        String messageText = "";
+        if (botChatEntityOptional.isPresent()) {
+            switch (LangugeEnum.values()[Integer.parseInt(data.split(SEMICOLON)[1])]) {
+                case RU -> {
+                    messageText = LANGUAGE_CHANGED_TO_RUSSIAN;
+                    botChatEntityOptional.get().setLanguage(LangugeEnum.RU);
+                    botChatEntityRepository.save(botChatEntityOptional.get());
+                }
+                case EN -> {
+                    messageText = LANGUAGE_CHANGED_TO_ENGLISH;
+                    botChatEntityOptional.get().setLanguage(LangugeEnum.EN);
+                    botChatEntityRepository.save(botChatEntityOptional.get());
+                }
+            }
+        }
+        return new SendMessage(chatId.toString(), messageText);
+    }
+
     private List<SendMessage> getPeopleList(Long chatId, List<BirthdayEntity> birthdayEntityList) {
         List<SendMessage> messageList = new ArrayList<>();
         int i = 0;
@@ -352,6 +462,22 @@ public class CommandService {
         sendMessage.setReplyMarkup(inlineKeyboardMarkup);
     }
 
+
+    private void addKeyboardForLanguage(SendMessage sendMessage) {
+        InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
+        List<InlineKeyboardButton> keyboardButtons = new ArrayList<>();
+        for (LangugeEnum langugeEnum: LangugeEnum.values()) {
+            InlineKeyboardButton inlineKeyboardButton = new InlineKeyboardButton();
+            inlineKeyboardButton.setText(langugeEnum.getLanguage());
+            inlineKeyboardButton.setCallbackData(CallbackTypeEnum.LANGUAGE.ordinal() + SEMICOLON + langugeEnum.ordinal());
+            keyboardButtons.add(inlineKeyboardButton);
+        }
+        List<List<InlineKeyboardButton>> rowList = new ArrayList<>();
+        keyboardButtons.forEach(t -> rowList.add(List.of(t)));
+        inlineKeyboardMarkup.setKeyboard(rowList);
+        sendMessage.setReplyMarkup(inlineKeyboardMarkup);
+    }
+
     private String getTodayMessage() {
         List<BirthdayEntity> birthdayEntityList = birthdayEntityRepository.findUpcomingBirthdays(LocalDate.now(), LocalDate.now().plusDays(1));
         String messageText = birthdayEntityList.isEmpty() ? NO_BIRTHDAYS_TODAY: TODAY_BIRTHDAYS.formatted(birthdayEntityList.stream().map(t -> TODAY_BIRTHDAY_FORMAT.formatted(t.getFullName(), t.getTeam())).collect(Collectors.joining(NEW_LINE)));
@@ -363,5 +489,23 @@ public class CommandService {
     private String  getBirthdayMessage(Long days) {
         List<BirthdayEntity> birthdayEntityList = birthdayEntityRepository.findUpcomingBirthdays(LocalDate.now(), LocalDate.now().plusDays(days));
         return birthdayEntityList.isEmpty() ? NO_NEAREST_BIRTHDAYS : NEAREST_BIRTHDAYS.formatted(birthdayEntityList.stream().map(t -> BIRTHDAY_FORMAT.formatted(t.getBirthday().getDayOfMonth(), dateTransformer.transformToRussian(t.getBirthday().getMonth().getValue()), t.getFullName(), t.getTeam())).collect(Collectors.joining(NEW_LINE)));
+    }
+
+    private String getHelpMessage(BotChatEntity botChatEntity) {
+        return switch (botChatEntity.getLanguage()) {
+            case EN -> HELP_EN;
+            case RU -> HELP_RU;
+        };
+    }
+
+    private String getAdminHelpMessage(BotChatEntity botChatEntity) {
+        return switch (botChatEntity.getLanguage()) {
+            case EN -> ADMIN_HELP_EN;
+            case RU -> ADMIN_HELP_RU;
+        };
+    }
+
+    private SendMessage startBot(Long chatId) {
+        return new SendMessage(chatId.toString(), PLEASE_USE_START_COMMAND);
     }
 }

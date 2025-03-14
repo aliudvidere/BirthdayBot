@@ -5,6 +5,9 @@ public interface CommandConstants {
     String START_COMMAND = "start";
     String START_COMMAND_DESCRIPTION = "Start the bot";
 
+    String LANGUAGE_COMMAND = "language";
+    String LANGUAGE_COMMAND_DESCRIPTION = "Choose language of the bot";
+
     String STOP_COMMAND = "stop";
     String STOP_COMMAND_DESCRIPTION = "Stop the bot";
 

@@ -1,5 +1,6 @@
 package com.birthday.birthdaybot.model.entity;
 
+import com.birthday.birthdaybot.constants.LangugeEnum;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -25,8 +26,13 @@ public class BotChatEntity {
     @Column(name = "need_notify", nullable = false)
     private Boolean needNotify;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name="language", nullable = false)
+    private LangugeEnum language;
+
     public BotChatEntity(String chatId) {
         this.chatId = chatId;
         this.needNotify = true;
+        this.language = LangugeEnum.RU;
     }
 }

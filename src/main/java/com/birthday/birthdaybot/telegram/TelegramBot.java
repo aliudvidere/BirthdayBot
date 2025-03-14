@@ -35,6 +35,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     List<BotCommand> commands = Arrays.asList(
             new BotCommand(START_COMMAND, START_COMMAND_DESCRIPTION),
+            new BotCommand(LANGUAGE_COMMAND, LANGUAGE_COMMAND_DESCRIPTION),
             new BotCommand(STOP_COMMAND, STOP_COMMAND_DESCRIPTION),
             new BotCommand(NEAREST_BIRTHDAYS_COMMAND, NEAREST_BIRTHDAYS_COMMAND_DESCRIPTION),
             new BotCommand(THIS_WEEK_BIRTHDAYS_COMMAND, THIS_WEEK_BIRTHDAYS_COMMAND_DESCRIPTION),
@@ -63,14 +64,16 @@ public class TelegramBot extends TelegramLongPollingBot {
                 command = command.substring(1);
                 switch (command) {
                     case START_COMMAND -> {
-                        commandService.register(update.getMessage());
-                        sendMessage(new SendMessage(update.getMessage().getChatId().toString(), HELP));
+                        sendMessage(commandService.register(update.getMessage()));
+                    }
+                    case LANGUAGE_COMMAND -> {
+                        sendMessage(commandService.chooseLanguage(update.getMessage().getChatId()));
                     }
                     case STOP_COMMAND -> {
                         sendMessage(commandService.stopNotify(update.getMessage().getChatId()));
                     }
                     case HELP_COMMAND -> {
-                        sendMessage(new SendMessage(update.getMessage().getChatId().toString(), HELP));
+                        sendMessage(commandService.help(update.getMessage().getChatId()));
                     }
                     case NEAREST_BIRTHDAYS_COMMAND -> {
                         sendMessage(commandService.getNearestBirthdays(update.getMessage().getChatId()));
@@ -83,9 +86,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                     }
                     case ADMIN_HELP_COMMAND -> {
                         if (commandService.checkAdmin(update.getMessage().getFrom().getUserName())) {
-                            SendMessage sendMessage = new SendMessage(update.getMessage().getChatId().toString(), ADMIN_HELP);
-                            sendMessage.setParseMode(HTML);
-                            sendMessage(sendMessage);
+                            sendMessage(commandService.adminHelp(update.getMessage().getChatId()));
                         }
                     }
                     case PERIOD_COMMAND -> {
@@ -152,6 +153,9 @@ public class TelegramBot extends TelegramLongPollingBot {
                     if (commandService.checkAdmin(update.getCallbackQuery().getFrom().getUserName())) {
                         sendMessage(commandService.deletePersonCallback(update.getCallbackQuery().getMessage().getChatId(), update.getCallbackQuery().getData()));
                     }
+                }
+                case CallbackTypeEnum.LANGUAGE -> {
+                    sendMessage(commandService.chooseLanguageCallback(update.getCallbackQuery().getMessage().getChatId(), update.getCallbackQuery().getData()));
                 }
             }
         }
