@@ -9,14 +9,15 @@ public interface MessageConstants {
             /today_birthdays - today birthdays information
             """;
     String ADMIN_HELP = HELP + """
-            /period - to get period send /period, to set period send /period days, for example <b>/period 10</b> will find people with birthday in next 10 days
-            /people_list - get all people information
-            /find - to find person send /find name or team, for example <b>/find nttm</b> return all people with nttm in name or team
+            /period - to get period send /period, to set period send /period days, for example <b>/period 10</b> will find people with birthday in next 10 days;
+            /people_list - get all people information;
+            /find - to find person send /find name or team, for example <b>/find nttm</b> return all people with nttm in name or team;
             /stop_notify - stop birthday notification in this chat;
             /start_notify - start birthday notification in this chat;
-            /delete - to delete person send /delete name or team, for example <b>/delete test</b> return buttons with all people with test in name or team (limit - 10 buttons)
-            /add - to add person send /add name, login, team, birthday in format YYYY-MM-DD format, for example <b>/add test, login, team, 1999-01-01</b>
-            /upload - to import CSV file use this structure: name,login,team, birthday in format YYYY-MM-DD format, for example <b>/test, login, team, 1999-01-01</b>
+            /delete - to delete person send /delete name or team, for example <b>/delete test</b> return buttons with all people with test in name or team (limit - 10 buttons);
+            /add - to add person send /add name, login, team, birthday in format YYYY-MM-DD format, for example <b>/add test, login, team, 1999-01-01</b>;
+            /upload - to import CSV file use this structure: name,login,team, birthday in format YYYY-MM-DD format, for example <b>/test, login, team, 1999-01-01</b>;
+            /export - to export the birthdays table in excel format.
             """;
     String COMMAND_FORMAT = "Command should start with \"/\"";
 
