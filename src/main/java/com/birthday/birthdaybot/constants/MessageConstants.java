@@ -55,6 +55,8 @@ public interface MessageConstants {
 
     String TODAY_BIRTHDAYS = "\uD83C\uDF89 Сегодня день рождения! \uD83C\uDF82\uD83C\uDF88\n%s\n";
 
+    String TOMORROW_BIRTHDAYS = "\uD83C\uDF89 Завтра день рождения! \uD83C\uDF82\uD83C\uDF88\n%s\n";
+
     String NO_NEAREST_BIRTHDAYS = "В заданный период нет дней рождений";
 
     String BIRTHDAY_FORMAT = "\uD83C\uDF82 <b>%s %s</b> — %s, <i>%s</i>";
@@ -88,6 +90,8 @@ public interface MessageConstants {
     String NO_BIRTHDAYS_TODAY = "\uD83D\uDCC5 Сегодня нет именинников\n";
 
     String TODAY_BIRTHDAY_FORMAT =  "\uD83E\uDD73 %s, %s";
+
+    String TOMORROW_BIRTHDAY_FORMAT =  "\uD83E\uDD73 %s, %s";
 
     String CHOOSE_LANGUAGE = "Choose language";
 
