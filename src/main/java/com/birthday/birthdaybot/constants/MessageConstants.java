@@ -53,6 +53,8 @@ public interface MessageConstants {
 
     String NEAREST_BIRTHDAYS = "\uD83D\uDCC5 Ближайшие дни рождения \uD83C\uDF89\n%s";
 
+    String SOON_BIRTHDAYS = "\uD83D\uDCC5 Скоро день рождения \uD83C\uDF89\n%s";
+
     String TODAY_BIRTHDAYS = "\uD83C\uDF89 Сегодня день рождения! \uD83C\uDF82\uD83C\uDF88\n%s\n";
 
     String TOMORROW_BIRTHDAYS = "\uD83C\uDF89 Завтра день рождения! \uD83C\uDF82\uD83C\uDF88\n%s\n";

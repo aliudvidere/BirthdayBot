@@ -495,12 +495,13 @@ public class CommandService {
     }
 
     private String getDailyMessage() {
+        long period = Long.parseLong(configEntityRepository.findById("birthday_period").map(ConfigEntity::getValue).orElse("7"));
         List<BirthdayEntity> todayBirthdayEntityList = birthdayEntityRepository.findUpcomingBirthdays(LocalDate.now(), LocalDate.now().plusDays(1));
         List<BirthdayEntity> tomorrowBirthdayEntityList = birthdayEntityRepository.findUpcomingBirthdays(LocalDate.now().plusDays(1), LocalDate.now().plusDays(2));
-        List<BirthdayEntity> nearestPeriodBirthdayEntityList = birthdayEntityRepository.findUpcomingBirthdays(LocalDate.now().plusDays(2), LocalDate.now().plusDays(Long.parseLong(configEntityRepository.findById("birthday_period").map(ConfigEntity::getValue).orElse("10"))));
+        List<BirthdayEntity> soonPeriodBirthdayEntityList = birthdayEntityRepository.findUpcomingBirthdays(LocalDate.now().plusDays(period), LocalDate.now().plusDays(period + 1));
         String messageText = todayBirthdayEntityList.isEmpty() ? EMPTY_STRING : TODAY_BIRTHDAYS.formatted(todayBirthdayEntityList.stream().map(t -> TODAY_BIRTHDAY_FORMAT.formatted(t.getFullName(), t.getTeam())).collect(Collectors.joining(NEW_LINE))) + NEW_LINE;
         messageText += tomorrowBirthdayEntityList.isEmpty() ? EMPTY_STRING : TOMORROW_BIRTHDAYS.formatted(tomorrowBirthdayEntityList.stream().map(t -> TOMORROW_BIRTHDAY_FORMAT.formatted(t.getFullName(), t.getTeam())).collect(Collectors.joining(NEW_LINE))) + NEW_LINE;
-        messageText += nearestPeriodBirthdayEntityList.isEmpty() ? EMPTY_STRING : NEAREST_BIRTHDAYS.formatted(nearestPeriodBirthdayEntityList.stream().map(t -> BIRTHDAY_FORMAT.formatted(t.getBirthday().getDayOfMonth(), dateTransformer.transformToRussian(t.getBirthday().getMonth().getValue()), t.getFullName(), t.getTeam())).collect(Collectors.joining(NEW_LINE)));
+        messageText += soonPeriodBirthdayEntityList.isEmpty() ? EMPTY_STRING : SOON_BIRTHDAYS.formatted(soonPeriodBirthdayEntityList.stream().map(t -> BIRTHDAY_FORMAT.formatted(t.getBirthday().getDayOfMonth(), dateTransformer.transformToRussian(t.getBirthday().getMonth().getValue()), t.getFullName(), t.getTeam())).collect(Collectors.joining(NEW_LINE)));
         return messageText;
     }
 
