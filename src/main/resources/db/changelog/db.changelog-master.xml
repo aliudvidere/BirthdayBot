@@ -18,4 +18,6 @@
 
     <include file="changesets/addLanguageColumn/addLanguageColumn.xml" relativeToChangelogFile="true"/>
 
+    <include file="changesets/addAdminNotifyColumn/addAdminNotifyColumn.xml" relativeToChangelogFile="true"/>
+
 </databaseChangeLog>

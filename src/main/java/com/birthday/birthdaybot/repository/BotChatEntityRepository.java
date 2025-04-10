@@ -15,6 +15,8 @@ public interface BotChatEntityRepository extends JpaRepository<BotChatEntity, In
 
     List<BotChatEntity> findByNeedNotifyTrue();
 
+    List<BotChatEntity> findByAdminNotifyTrue();
+
     Boolean existsByChatId(String chatId);
 
 }

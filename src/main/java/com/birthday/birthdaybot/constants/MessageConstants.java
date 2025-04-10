@@ -37,7 +37,10 @@ public interface MessageConstants {
             /delete - to delete person send /delete name or team, for example <b>/delete test</b> return buttons with all people with test in name or team (limit - 10 buttons);
             /add - to add person send /add name, login, team, birthday in format YYYY-MM-DD format, for example <b>/add test, login, team, 1999-01-01</b>;
             /upload - to import CSV file use this structure: name,login,team, birthday in format YYYY-MM-DD format, for example <b>/test, login, team, 1999-01-01</b>;
-            /export - to export the birthdays table in excel format.
+            /export - to export the birthdays table in excel format;
+            /today_birthdays_admin - get today birthdays extra information;
+            /stop_admin_notify - stop birthday admin notification in this chat;
+            /start_admin_notify - start birthday admin notification in this chat.
             """;
     String COMMAND_FORMAT = "Command should start with \"/\"";
 
@@ -71,9 +74,13 @@ public interface MessageConstants {
 
     String FIND_TEMPLATE = "%%%s%%";
 
-    String STOP_NOTIFY = "Notification about birthdays were stopped in this chat";
+    String STOP_NOTIFY = "Notifications about birthdays were stopped in this chat";
 
-    String START_NOTIFY = "Notification about birthdays were started in this chat";
+    String START_NOTIFY = "Notifications about birthdays were started in this chat";
+
+    String STOP_ADMIN_NOTIFY = "Admin notifications about birthdays were stopped in this chat";
+
+    String START_ADMIN_NOTIFY = "Admin notifications about birthdays were started in this chat";
 
     String TOO_MANY_RESULTS = "Too many results";
 

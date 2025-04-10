@@ -17,5 +17,6 @@ public class NotifyScheduler {
     @Scheduled(cron = "0 0 9 * * *")
     public void todayBirthdays() {
         telegramBot.sendMessages(commandService.getTodayBirthdays());
+        telegramBot.sendMessages(commandService.getTodayBirthdaysAdmin());
     }
 }

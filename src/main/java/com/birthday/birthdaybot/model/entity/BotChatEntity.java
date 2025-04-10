@@ -30,9 +30,13 @@ public class BotChatEntity {
     @Column(name="language", nullable = false)
     private LangugeEnum language;
 
+    @Column(name = "admin_notify", nullable = false)
+    private Boolean adminNotify;
+
     public BotChatEntity(String chatId) {
         this.chatId = chatId;
         this.needNotify = true;
         this.language = LangugeEnum.RU;
+        this.adminNotify = false;
     }
 }

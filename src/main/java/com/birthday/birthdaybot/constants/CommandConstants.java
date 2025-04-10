@@ -30,6 +30,9 @@ public interface CommandConstants {
     String DELETE_COMMAND = "delete";
     String ADD_COMMAND = "add";
     String EXPORT_COMMAND = "export";
+    String TODAY_BIRTHDAYS_ADMIN_COMMAND = "today_birthdays_admin";
+    String STOP_ADMIN_NOTIFY_COMMAND = "stop_admin_notify";
+    String START_ADMIN_NOTIFY_COMMAND = "start_admin_notify";
 
     String UPLOAD_CAPTION = "/upload";
 }

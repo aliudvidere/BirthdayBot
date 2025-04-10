@@ -126,6 +126,35 @@ public class CommandService {
         return sendMessage;
     }
 
+    public SendMessage stopAdminNotify(Long chatId) {
+        SendMessage sendMessage;
+        Optional<BotChatEntity> botChatEntityOptional = botChatEntityRepository.findByChatId(chatId.toString());
+        if (botChatEntityOptional.isEmpty()) {
+            sendMessage = startBot(chatId);
+        }
+        else {
+            botChatEntityOptional.get().setAdminNotify(false);
+            botChatEntityRepository.save(botChatEntityOptional.get());
+            sendMessage = new SendMessage(chatId.toString(), STOP_ADMIN_NOTIFY);
+        }
+        return sendMessage;
+    }
+
+
+    public SendMessage startAdminNotify(Long chatId) {
+        SendMessage sendMessage;
+        Optional<BotChatEntity> botChatEntityOptional = botChatEntityRepository.findByChatId(chatId.toString());
+        if (botChatEntityOptional.isEmpty()) {
+            sendMessage = startBot(chatId);
+        }
+        else {
+            botChatEntityOptional.get().setAdminNotify(true);
+            botChatEntityRepository.save(botChatEntityOptional.get());
+            sendMessage = new SendMessage(chatId.toString(), START_ADMIN_NOTIFY);
+        }
+        return sendMessage;
+    }
+
     public boolean checkAdmin(String username) {
         if (username.isEmpty()) {
             return false;
@@ -207,6 +236,33 @@ public class CommandService {
         }
         else {
             String dailyMessage =  getDailyMessage();
+            if (!dailyMessage.isEmpty()) {
+                sendMessage = new SendMessage(chatId.toString(), dailyMessage);
+                sendMessage.setParseMode(HTML);
+            }
+            else {
+                sendMessage = new SendMessage(chatId.toString(), NO_NEAREST_BIRTHDAYS);
+            }
+        }
+        return sendMessage;
+    }
+
+    public List<SendMessage> getTodayBirthdaysAdmin() {
+        String messageText = getAdminDailyMessage();
+        return messageText.isEmpty() ? emptyList() : botChatEntityRepository.findByAdminNotifyTrue().stream().map(t -> {
+            SendMessage sendMessage = new SendMessage(t.getChatId(), messageText);
+            sendMessage.setParseMode(HTML);
+            return sendMessage;
+        }).toList();
+    }
+
+    public SendMessage getTodayBirthdaysAmin(Long chatId) {
+        SendMessage sendMessage;
+        if (!botChatEntityRepository.existsByChatId(chatId.toString())) {
+            sendMessage = startBot(chatId);
+        }
+        else {
+            String dailyMessage =  getAdminDailyMessage();
             if (!dailyMessage.isEmpty()) {
                 sendMessage = new SendMessage(chatId.toString(), dailyMessage);
                 sendMessage.setParseMode(HTML);
@@ -495,6 +551,11 @@ public class CommandService {
     }
 
     private String getDailyMessage() {
+        List<BirthdayEntity> todayBirthdayEntityList = birthdayEntityRepository.findUpcomingBirthdays(LocalDate.now(), LocalDate.now().plusDays(1));
+        return todayBirthdayEntityList.isEmpty() ? EMPTY_STRING : TODAY_BIRTHDAYS.formatted(todayBirthdayEntityList.stream().map(t -> TODAY_BIRTHDAY_FORMAT.formatted(t.getFullName(), t.getTeam())).collect(Collectors.joining(NEW_LINE))) + NEW_LINE;
+    }
+
+    private String getAdminDailyMessage() {
         long period = Long.parseLong(configEntityRepository.findById("birthday_period").map(ConfigEntity::getValue).orElse("7"));
         List<BirthdayEntity> todayBirthdayEntityList = birthdayEntityRepository.findUpcomingBirthdays(LocalDate.now(), LocalDate.now().plusDays(1));
         List<BirthdayEntity> tomorrowBirthdayEntityList = birthdayEntityRepository.findUpcomingBirthdays(LocalDate.now().plusDays(1), LocalDate.now().plusDays(2));

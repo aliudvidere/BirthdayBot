@@ -84,6 +84,11 @@ public class TelegramBot extends TelegramLongPollingBot {
                     case TODAY_BIRTHDAYS_COMMAND -> {
                         sendMessage(commandService.getTodayBirthdays(update.getMessage().getChatId()));
                     }
+                    case TODAY_BIRTHDAYS_ADMIN_COMMAND -> {
+                        if (commandService.checkAdmin(update.getMessage().getFrom().getUserName())) {
+                            sendMessage(commandService.getTodayBirthdaysAmin(update.getMessage().getChatId()));
+                        }
+                    }
                     case ADMIN_HELP_COMMAND -> {
                         if (commandService.checkAdmin(update.getMessage().getFrom().getUserName())) {
                             sendMessage(commandService.adminHelp(update.getMessage().getChatId()));
@@ -131,6 +136,16 @@ public class TelegramBot extends TelegramLongPollingBot {
                     case EXPORT_COMMAND -> {
                         if (commandService.checkAdmin(update.getMessage().getFrom().getUserName())) {
                             sendDocument(commandService.export(update.getMessage().getChatId()));
+                        }
+                    }
+                    case STOP_ADMIN_NOTIFY_COMMAND -> {
+                        if (commandService.checkAdmin(update.getMessage().getFrom().getUserName())) {
+                            sendMessage(commandService.stopAdminNotify(update.getMessage().getChatId()));
+                        }
+                    }
+                    case START_ADMIN_NOTIFY_COMMAND -> {
+                        if (commandService.checkAdmin(update.getMessage().getFrom().getUserName())) {
+                            sendMessage(commandService.startAdminNotify(update.getMessage().getChatId()));
                         }
                     }
                 }
